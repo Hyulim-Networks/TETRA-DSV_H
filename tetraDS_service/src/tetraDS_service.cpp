@@ -5107,7 +5107,7 @@ void *DockingThread_function(void *data)
             default:
                 break;
         }
-        printf("ex_iDocking_CommandMode: %d \n", ex_iDocking_CommandMode);
+        // printf("ex_iDocking_CommandMode: %d \n", ex_iDocking_CommandMode);
         usleep(20000); //20ms
     }
 

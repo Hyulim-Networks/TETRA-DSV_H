@@ -6295,6 +6295,8 @@ int main (int argc, char** argv)
     printf("HOME_dQUATERNION_Y: %f \n", _pHomePose.HOME_dQUATERNION_Y);
     printf("HOME_dQUATERNION_Z: %f \n", _pHomePose.HOME_dQUATERNION_Z);
     printf("HOME_dQUATERNION_W: %f \n", _pHomePose.HOME_dQUATERNION_W);
+
+    set_armarker10();
     
     std::string node_name = "/" + tf_prefix_ + "/move_base"; // add move_base Die Check node_name
     while(ros::ok())

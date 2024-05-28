@@ -1887,6 +1887,9 @@ bool Depart_1500mm_Liftmove() // not use cygbot lidar because backward move in p
     printf("BackMove until LIFT PORT! \n");
 
     ex_iDocking_CommandMode = 0;
+
+    LiftMovement1(lift_cmd_client);
+
     return true;
 }
 
@@ -4972,7 +4975,7 @@ void *DockingThread_function(void *data)
             case 21:
                 set_armarker20();
                 printf("!! Lift_Thread_function_2 !! \n");
-                // LiftMovement1(lift_cmd_client);
+                LiftMovement2(lift_cmd_client);
                 Un_Lift_Check();
                 sleep(5); //wait 5sec
                 docking_progress.data = 21;

@@ -1859,6 +1859,48 @@ bool Un_Depart_10mm_Liftmove() // not use cygbot lidar because backward move in 
     return false;
 }
 
+bool LiftMovement1(ros::ServiceClient& lift_cmd_client)
+{
+    lift_srv.request.start = 0; //set origin and down
+
+    if (lift_cmd_client.call(lift_srv))
+    {
+        ROS_INFO("Lift movement 0 ... CNO LIFT DOWN ! ");
+
+        // Wait for 15 seconds
+        std::chrono::seconds duration(15);
+        std::this_thread::sleep_for(duration);
+
+        return true;
+    }
+    else
+    {
+        ROS_ERROR("Failed to call lift_auto_movement service !");
+        return false;
+    }
+}
+
+bool LiftMovement2(ros::ServiceClient& lift_cmd_client)
+{
+    lift_srv.request.start = 1; // lift up
+
+    if (lift_cmd_client.call(lift_srv))
+    {
+        ROS_INFO("Lift movement 1 ... CN1 LIFT UP ! ");
+
+        // Wait for 15 seconds
+        std::chrono::seconds duration(15);
+        std::this_thread::sleep_for(duration);
+
+        return true;
+    }
+    else
+    {
+        ROS_ERROR("Failed to call lift_auto_movement service !");
+        return false;
+    }
+}
+
 bool Depart_1500mm_Liftmove() // not use cygbot lidar because backward move in port ... 240207 mwcha
 {
     printf("GO Depart 1500mm OUT OF LIFT PORT \n");
@@ -2529,48 +2571,6 @@ bool Patrol_Command(tetraDS_service::patrol::Request &req,
     bResult = true;
 	res.command_Result = bResult;
 	return true;
-}
-
-bool LiftMovement1(ros::ServiceClient& lift_cmd_client)
-{
-    lift_srv.request.start = 0; //set origin and down
-
-    if (lift_cmd_client.call(lift_srv))
-    {
-        ROS_INFO("Lift movement 0 ... CNO LIFT DOWN ! ");
-
-        // Wait for 15 seconds
-        std::chrono::seconds duration(15);
-        std::this_thread::sleep_for(duration);
-
-        return true;
-    }
-    else
-    {
-        ROS_ERROR("Failed to call lift_auto_movement service !");
-        return false;
-    }
-}
-
-bool LiftMovement2(ros::ServiceClient& lift_cmd_client)
-{
-    lift_srv.request.start = 1; // lift up
-
-    if (lift_cmd_client.call(lift_srv))
-    {
-        ROS_INFO("Lift movement 1 ... CN1 LIFT UP ! ");
-
-        // Wait for 15 seconds
-        std::chrono::seconds duration(15);
-        std::this_thread::sleep_for(duration);
-
-        return true;
-    }
-    else
-    {
-        ROS_ERROR("Failed to call lift_auto_movement service !");
-        return false;
-    }
 }
 
 // bool Patrol_Conveyor_Command(tetraDS_service::patrol_conveyor::Request &req, 

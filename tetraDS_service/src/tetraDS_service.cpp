@@ -207,6 +207,9 @@ bool m_flag_SpeedZone = false;
 bool m_flag_major_update[255] = {false, };
 bool m_flag_minor_update[255] = {false, };
 
+// armarker flag
+int armarker_flag = 0;
+
 //Speed Zone Point...
 typedef struct TAGPOINT
 {
@@ -3386,8 +3389,10 @@ bool rosnodekill_all()
 bool set_armarker10() //240104 mwcha
 {
     bool m_Result = false;
+    if(armarker_flag==1) return true;
 
     string str_command = "gnome-terminal -- /home/tetra/ar_marker_10.sh ";
+    armarker_flag = 1;
 
     std::vector<char> writable3(str_command.begin(), str_command.end());
     writable3.push_back('\0');
@@ -3405,8 +3410,10 @@ bool set_armarker10() //240104 mwcha
 bool set_armarker20() //240104 mwcha
 {
     bool m_Result = false;
+    if(armarker_flag==2) return true;
 
     string str_command = "gnome-terminal -- /home/tetra/ar_marker_20.sh ";
+    armarker_flag = 2;
 
     std::vector<char> writable3(str_command.begin(), str_command.end());
     writable3.push_back('\0');
@@ -3644,8 +3651,6 @@ bool ChargingStation_tracking(bool bOn, int marker_id)
     if(bOn)
     {
         float m_fdistance = 0.0;
-        if(_pAR_tag_pose.m_iAR_tag_id == marker_id)
-        {
             m_fdistance = sqrt(_pAR_tag_pose.m_transform_pose_x * _pAR_tag_pose.m_transform_pose_x + _pAR_tag_pose.m_transform_pose_y * _pAR_tag_pose.m_transform_pose_y);
             printf("m_fdistance: %.5f \n", m_fdistance);
             if(m_fdistance > 0.6 && m_fdistance < 2.0) // update by mwcha ... 231130
@@ -3682,29 +3687,7 @@ bool ChargingStation_tracking(bool bOn, int marker_id)
                 ex_iDocking_CommandMode = 3;
                 m_iNoMarker_cnt = 0;
             }
-        }
-        else
-        {
-            printf("No Marker, Rotation Movement !! \n");
-            cmd->angular.z = Rotation_Movement(); //0.1;
-            cmdpub_.publish(cmd);
-
-            if(m_iNoMarker_cnt > 4000) //retry timeout!!
-            {
-                m_iNoMarker_cnt = 0;
-                cmd->linear.x =  0.0; 
-                cmd->angular.z = 0.0;
-                cmdpub_.publish(cmd);
-                printf("DockingStation scan Fail !! \n");
-                ex_iDocking_CommandMode = 9;
-
-            }
-            else
-            {
-                m_iNoMarker_cnt++;
-            }
-
-        }
+        
 
     }
     else

@@ -30,7 +30,7 @@ extern "C"
 #include <unistd.h>
 using namespace std;
 
-#define WHEEL_RADIUS 0.1027 //m
+#define WHEEL_RADIUS 0.085 //m
 #define WHEEL_DISTANCE 0.7901 //m ... update H model
 #define TREAD_WIDTH 0.04 //m
 
@@ -651,7 +651,7 @@ int main(int argc, char * argv[])
 		{
 			printf("[Motor Driver Error] Left Error Code: %d \n", m_left_error_code);
 			printf("[Motor Driver Error] Right Error Code: %d \n", m_right_error_code);
-			dssp_rs232_drv_module_set_drive_err_reset();
+			// dssp_rs232_drv_module_set_drive_err_reset();
 			usleep(1000);
 			dssp_rs232_drv_module_set_servo(1); //Servo On
 		}

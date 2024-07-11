@@ -37,7 +37,7 @@ showHelp() {
 if [ $# -lt 3 -o "$1" = "-h" ]; then
     showHelp
 else 
-    ROS_NAMESPACE=TE2416003
+    ROS_NAMESPACE=TETRA_NS
     echo "start wait for $1 seconds"
     sleep $1
     echo "end wait for $1 seconds"

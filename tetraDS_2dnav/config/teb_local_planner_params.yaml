@@ -24,18 +24,18 @@ TebLocalPlannerROS:
  # Robot
  max_vel_x: 0.8
  max_vel_y: 0.0
- max_vel_x_backwards: 0.05 #0.15
- max_vel_theta: 0.55
- acc_lim_x: 1.0
+ max_vel_x_backwards: 0.3
+ max_vel_theta: 0.1 #0.55
+ acc_lim_x: 2.0
  acc_lim_y: 0.0 
- acc_lim_theta: 1.0
- min_turning_radius: 0.0
+ acc_lim_theta: 2.0
+ min_turning_rdius: 0.0
  wheelbase: 0.0
  cmd_angle_instead_rotvel: false
-
  footprint_model:
    type: "circular"
    radius: 0.6135
+
     
  # GoalTolerance
  xy_goal_tolerance: 0.05
@@ -43,13 +43,13 @@ TebLocalPlannerROS:
  free_goal_vel: false
 
  # Obstacles
- min_obstacle_dist: 0.44 # update H model ... 231122 mwcha
+ min_obstacle_dist: 0.44
  include_costmap_obstacles: true
  costmap_obstacles_behind_robot_dist: 1.5
  obstacle_poses_affected: 30
- inflation_dist: 0.56 # update H model ... 231122 mwcha
+ inflation_dist: 0.45
  include_dynamic_obstacles: false
- dynamic_obstacle_inflation_dist: 0.4
+ dynamic_obstacle_inflation_dist: 0.44
  legacy_obstacle_association: false
  obstacle_association_force_inclusion_factor: 1.5
  obstacle_association_cutoff_factor: 5
@@ -60,7 +60,7 @@ TebLocalPlannerROS:
  # Optimization
  no_inner_iterations: 5
  no_outer_iterations: 4
- penalty_epsilon: 0.04
+ penalty_epsilon: 0.1
  weight_max_vel_x: 1.0
  weight_max_vel_y: 0.0
  weight_max_vel_theta: 1.0
@@ -68,14 +68,14 @@ TebLocalPlannerROS:
  weight_acc_lim_y: 0.0 
  weight_acc_lim_theta: 0.0
  weight_kinematics_nh: 1000.0
- weight_kinematics_forward_drive: 100.0
+ weight_kinematics_forward_drive: 500.0
  weight_kinematics_turning_radius: 1.0
  weight_optimaltime: 1.0
- weight_obstacle: 18.0 #50.0
+ weight_obstacle: 20.0
  weight_viapoint: 1.0
  weight_inflation: 0.1
  weight_dynamic_obstacle: 1.0
- weight_dynamic_obstacle_inflation: 1.0
+ weight_dynamic_obstacle_inflation: 2.0 #1.0
 
  # Homotopy Class Planner
  enable_homotopy_class_planning: false

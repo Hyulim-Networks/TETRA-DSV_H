@@ -108,10 +108,10 @@ int m_iPowerCheck = 0;
 int m_iPowerCheckCount = 0;
 //Ultrasonic data//
 double m_dUltrasonic[8] = {0.0, };  //Max Ultrasonic: 8ea (TETRA-DS5 used 4ea)
-sensor_msgs::Range range_msg1; //Ultrasonic_1
-sensor_msgs::Range range_msg2; //Ultrasonic_2
-sensor_msgs::Range range_msg3; //Ultrasonic_3
-sensor_msgs::Range range_msg4; //Ultrasonic_4
+// sensor_msgs::Range range_msg1; //Ultrasonic_1
+// sensor_msgs::Range range_msg2; //Ultrasonic_2
+// sensor_msgs::Range range_msg3; //Ultrasonic_3
+// sensor_msgs::Range range_msg4; //Ultrasonic_4
 double time_offset_in_seconds;
 //GPIO data//
 int m_iOutput[8] = {0,};
@@ -1005,10 +1005,10 @@ int main(int argc, char * argv[])
 	log_service = log_h.advertiseService("log_cmd", Log_Command);
 
 	//Ultrasonic//
-	ros::Publisher Ultrasonic1_pub = n.advertise<sensor_msgs::Range>("Ultrasonic_D_L", 10);
-	ros::Publisher Ultrasonic2_pub = n.advertise<sensor_msgs::Range>("Ultrasonic_R_L", 10);
-	ros::Publisher Ultrasonic3_pub = n.advertise<sensor_msgs::Range>("Ultrasonic_R_R", 10);
-	ros::Publisher Ultrasonic4_pub = n.advertise<sensor_msgs::Range>("Ultrasonic_D_R", 10);
+	// ros::Publisher Ultrasonic1_pub = n.advertise<sensor_msgs::Range>("Ultrasonic_D_L", 10);
+	// ros::Publisher Ultrasonic2_pub = n.advertise<sensor_msgs::Range>("Ultrasonic_R_L", 10);
+	// ros::Publisher Ultrasonic3_pub = n.advertise<sensor_msgs::Range>("Ultrasonic_R_R", 10);
+	// ros::Publisher Ultrasonic4_pub = n.advertise<sensor_msgs::Range>("Ultrasonic_D_R", 10);
 	
 	// PowerSensor parameter read Services
 	ros::NodeHandle param;
@@ -1074,47 +1074,47 @@ int main(int argc, char * argv[])
 	printf("##lift_option: %d \n", m_bLift_option);
 
 	//Ultrasonic Paramter Setting//////////////////////////////////
-	char frameid1[] = "/Ultrasonic_Down_Left";
-	range_msg1.header.frame_id = tf_prefix_ + frameid1;
-	range_msg1.radiation_type = 0; //Ultrasonic
-	range_msg1.field_of_view = (60.0/180.0) * M_PI; //
-	range_msg1.min_range = Ultrasonic_MIN_range; 
-	range_msg1.max_range = Ultrasonic_MAX_range; 
+	// char frameid1[] = "/Ultrasonic_Down_Left";
+	// range_msg1.header.frame_id = tf_prefix_ + frameid1;
+	// range_msg1.radiation_type = 0; //Ultrasonic
+	// range_msg1.field_of_view = (60.0/180.0) * M_PI; //
+	// range_msg1.min_range = Ultrasonic_MIN_range; 
+	// range_msg1.max_range = Ultrasonic_MAX_range; 
 
-	char frameid2[] = "/Ultrasonic_Rear_Left";
-	range_msg2.header.frame_id = tf_prefix_ + frameid2;
-	range_msg2.radiation_type = 0; //Ultrasonic
-	range_msg2.field_of_view = (60.0/180.0) * M_PI; //
-	range_msg2.min_range = Ultrasonic_MIN_range;
-	range_msg2.max_range = Ultrasonic_MAX_range;
+	// char frameid2[] = "/Ultrasonic_Rear_Left";
+	// range_msg2.header.frame_id = tf_prefix_ + frameid2;
+	// range_msg2.radiation_type = 0; //Ultrasonic
+	// range_msg2.field_of_view = (60.0/180.0) * M_PI; //
+	// range_msg2.min_range = Ultrasonic_MIN_range;
+	// range_msg2.max_range = Ultrasonic_MAX_range;
 
-	char frameid3[] = "/Ultrasonic_Rear_Right";
-	range_msg3.header.frame_id = tf_prefix_ + frameid3;
-	range_msg3.radiation_type = 0; //Ultrasonic
-	range_msg3.field_of_view = (60.0/180.0) * M_PI; //
-	range_msg3.min_range = Ultrasonic_MIN_range;
-	range_msg3.max_range = Ultrasonic_MAX_range;
+	// char frameid3[] = "/Ultrasonic_Rear_Right";
+	// range_msg3.header.frame_id = tf_prefix_ + frameid3;
+	// range_msg3.radiation_type = 0; //Ultrasonic
+	// range_msg3.field_of_view = (60.0/180.0) * M_PI; //
+	// range_msg3.min_range = Ultrasonic_MIN_range;
+	// range_msg3.max_range = Ultrasonic_MAX_range;
 
-	char frameid4[] = "/Ultrasonic_Down_Right";
-	range_msg4.header.frame_id = tf_prefix_ + frameid4;
-	range_msg4.radiation_type = 0; //Ultrasonic
-	range_msg4.field_of_view = (60.0/180.0) * M_PI; //
-	range_msg4.min_range = Ultrasonic_MIN_range;
-	range_msg4.max_range = Ultrasonic_MAX_range;
+	// char frameid4[] = "/Ultrasonic_Down_Right";
+	// range_msg4.header.frame_id = tf_prefix_ + frameid4;
+	// range_msg4.radiation_type = 0; //Ultrasonic
+	// range_msg4.field_of_view = (60.0/180.0) * M_PI; //
+	// range_msg4.min_range = Ultrasonic_MIN_range;
+	// range_msg4.max_range = Ultrasonic_MAX_range;
 
 	////////////////////////////////////////////////////////////////////////////////////////////
 	////sonar range to pointcloud//
-	points_1 = n.advertise<sensor_msgs::PointCloud2>("range_points_DL", 10);
-	points_2 = n.advertise<sensor_msgs::PointCloud2>("range_points_RL", 10);
-	points_3 = n.advertise<sensor_msgs::PointCloud2>("range_points_RR", 10);
-	points_4 = n.advertise<sensor_msgs::PointCloud2>("range_points_DR", 10);
+	// points_1 = n.advertise<sensor_msgs::PointCloud2>("range_points_DL", 10);
+	// points_2 = n.advertise<sensor_msgs::PointCloud2>("range_points_RL", 10);
+	// points_3 = n.advertise<sensor_msgs::PointCloud2>("range_points_RR", 10);
+	// points_4 = n.advertise<sensor_msgs::PointCloud2>("range_points_DR", 10);
 
-	ros::Subscriber sonar0_sub = n.subscribe<sensor_msgs::Range>("Ultrasonic_D_L",10,RangeToCloud_D_L);
-	ros::Subscriber sonar1_sub = n.subscribe<sensor_msgs::Range>("Ultrasonic_R_L",10,RangeToCloud_R_L);
-	ros::Subscriber sonar2_sub = n.subscribe<sensor_msgs::Range>("Ultrasonic_R_R",10,RangeToCloud_R_R);
-	ros::Subscriber sonar3_sub = n.subscribe<sensor_msgs::Range>("Ultrasonic_D_R",10,RangeToCloud_D_R);
+	// ros::Subscriber sonar0_sub = n.subscribe<sensor_msgs::Range>("Ultrasonic_D_L",10,RangeToCloud_D_L);
+	// ros::Subscriber sonar1_sub = n.subscribe<sensor_msgs::Range>("Ultrasonic_R_L",10,RangeToCloud_R_L);
+	// ros::Subscriber sonar2_sub = n.subscribe<sensor_msgs::Range>("Ultrasonic_R_R",10,RangeToCloud_R_R);
+	// ros::Subscriber sonar3_sub = n.subscribe<sensor_msgs::Range>("Ultrasonic_D_R",10,RangeToCloud_D_R);
 
-    	ros::Rate loop_rate(30.0); //30Hz Loop
+    ros::Rate loop_rate(30.0); //30Hz Loop
 	sprintf(port, "/dev/ttyS1");
 	
 	//RS232 Connect
@@ -1138,7 +1138,7 @@ int main(int argc, char * argv[])
         	ros::spinOnce();
 		// calculate measurement time
 		ros::Time measurement_time = ros::Time(0) + ros::Duration(time_offset_in_seconds);
-	//	m_iPowerCheck = dssp_rs232_power_module_read_battery(&m_dbattery, &m_dVoltage, &m_dCurrent, &m_imode_status, m_iInput, m_iOutput);
+		//	m_iPowerCheck = dssp_rs232_power_module_read_battery(&m_dbattery, &m_dVoltage, &m_dCurrent, &m_imode_status, m_iInput, m_iOutput);
 		m_iPowerCheck = dssp_rs232_power_module_read_tetra(&m_dbattery, &m_dVoltage, &m_dCurrent, &m_imode_status, m_iInput, m_iOutput, m_dUltrasonic);
 
 		if(m_iPowerCheck < 0)
@@ -1205,35 +1205,35 @@ int main(int argc, char * argv[])
 		//m_dUltrasonic * 4ea
 	//	dssp_rs232_power_module_read_Ultrasonic(m_dUltrasonic);
 
-		if(m_dUltrasonic[0] == 0.0)
-			range_msg1.range = Ultrasonic_MAX_range;
-		else
-			range_msg1.range = m_dUltrasonic[0];
+		// if(m_dUltrasonic[0] == 0.0)
+		// 	range_msg1.range = Ultrasonic_MAX_range;
+		// else
+		// 	range_msg1.range = m_dUltrasonic[0];
 
-		range_msg1.header.stamp = measurement_time;
-		if(m_dUltrasonic[1] == 0.0)
-			range_msg2.range = Ultrasonic_MAX_range;
-		else
-			range_msg2.range = m_dUltrasonic[1];
+		// range_msg1.header.stamp = measurement_time;
+		// if(m_dUltrasonic[1] == 0.0)
+		// 	range_msg2.range = Ultrasonic_MAX_range;
+		// else
+		// 	range_msg2.range = m_dUltrasonic[1];
 
-		range_msg2.header.stamp = measurement_time;
-		if(m_dUltrasonic[2] == 0.0)
-			range_msg3.range = Ultrasonic_MAX_range;
-		else
-			range_msg3.range = m_dUltrasonic[2];
+		// range_msg2.header.stamp = measurement_time;
+		// if(m_dUltrasonic[2] == 0.0)
+		// 	range_msg3.range = Ultrasonic_MAX_range;
+		// else
+		// 	range_msg3.range = m_dUltrasonic[2];
 
-		range_msg3.header.stamp = measurement_time;
-		if(m_dUltrasonic[3] == 0.0)
-			range_msg4.range = Ultrasonic_MAX_range;
-		else
-			range_msg4.range = m_dUltrasonic[3];
+		// range_msg3.header.stamp = measurement_time;
+		// if(m_dUltrasonic[3] == 0.0)
+		// 	range_msg4.range = Ultrasonic_MAX_range;
+		// else
+		// 	range_msg4.range = m_dUltrasonic[3];
 			
-		range_msg4.header.stamp = measurement_time;
-		//Ultrasonic Publish
-		Ultrasonic1_pub.publish(range_msg1);
-		Ultrasonic2_pub.publish(range_msg2);
-		Ultrasonic3_pub.publish(range_msg3);
-		Ultrasonic4_pub.publish(range_msg4);
+		// range_msg4.header.stamp = measurement_time;
+		// //Ultrasonic Publish
+		// Ultrasonic1_pub.publish(range_msg1);
+		// Ultrasonic2_pub.publish(range_msg2);
+		// Ultrasonic3_pub.publish(range_msg3);
+		// Ultrasonic4_pub.publish(range_msg4);
 
 		// if(m_bConveyor_option) //true
 		// {

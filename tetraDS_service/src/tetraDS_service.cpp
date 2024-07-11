@@ -250,7 +250,7 @@ ZONE_DATA_POINT _pZoneDataPoint;
 typedef struct HOME_POSE
 {
     string HOME_strLOCATION = "HOME";
-    double HOME_dPOSITION_X = -0.8; //231129 mwcha
+    double HOME_dPOSITION_X = -0.8;
     double HOME_dPOSITION_Y = 0.0;
     double HOME_dPOSITION_Z = 0.0;
     double HOME_dQUATERNION_X = 0.0;
@@ -282,14 +282,18 @@ typedef struct FALG_VALUE
     bool m_bflag_ComebackHome = false;
     bool m_bfalg_DockingExit = false;
     bool m_bflag_Conveyor_docking = false;
-    bool m_bflag_Lift_docking = false; //231123 mwcha
-    bool m_bFlag_Disable_bumper = false;
+    bool m_bflag_Lift_docking = false;
     bool m_Onetime_reset_flag = false;
-    //bool m_bFlag_Obstacle_Center = false; //laser use ... H model made by mwcha
+    //bool m_bFlag_Obstacle_Center = false;
     bool m_bFlag_Obstacle_Left = false;
     bool m_bFlag_Obstacle_Left_b = false;   
     bool m_bFlag_Obstacle_Right = false;
     bool m_bFlag_Obstacle_Right_b = false;
+    //Merge scan check//
+    bool m_bFlag_MergeScan_Front = false;
+    bool m_bFlag_MergeScan_Rear = false;
+    bool m_bFlag_MergeScan_Left = false;
+    bool m_bFlag_MergeScan_Right = false;
     //PCL obstacle Check//
     bool m_bFlag_Obstacle_PCL1 = false;
     bool m_bFlag_Obstacle_PCL2 = false;
@@ -458,7 +462,7 @@ typedef struct DYNAMIC_PARAM
     double MAX_Linear_velocity = 0.0;
     double m_linear_vel = 0.0;
     double m_angular_vel = 0.0;
-    double m_dweight_kinematics_forward_drive_default = 600.0;
+    double m_dweight_kinematics_forward_drive_default = 100.0;
     double m_dweight_kinematics_forward_drive_backward = 10.0;
 }DYNAMIC_PARAM;
 DYNAMIC_PARAM _pDynamic_param;
@@ -638,18 +642,33 @@ geometry_msgs::PoseWithCovarianceStamped set_pose;
 ros::ServiceClient toggle_enabled_client;
 std_srvs::SetBool toggle_enabled;
 
-//Bumper_data to Pointcloud2_data//
+//Front Bumper_data to Pointcloud2_data//_wbjin_20240621//////////////////////////////////////////
 ros::Publisher  pointcloud_pub_;
 sensor_msgs::PointCloud2 pointcloud_;
 float P_INF_X = 0.1;  // somewhere out of reach from the robot (positive x)
 float P_INF_Y = + P_INF_X*cos(0.34906585);  // somewhere out of reach from the robot (positive y)
 float N_INF_Y = - P_INF_X*cos(0.34906585);  // somewhere out of reach from the robot (negative y)
 float ZERO = 0.0;
-float pc_radius_ = 0.05;
+float pc_radius_ = 0.03;
 float pc_height_ = 0.0;
-float p_side_x_ = 0.05;
+float p_side_x_ = 0.03;
 float p_side_y_ = + p_side_x_*cos(0.34906585);
 float n_side_y_ = - p_side_x_*cos(0.34906585);
+//////////////////////////////////////////////////////////////////////////////////////////////////
+
+//Rear Bumper_data to Pointcloud2_data//_wbjin_20240621///////////////////////////////////////////
+ros::Publisher  pointcloud_pub2_;
+sensor_msgs::PointCloud2 pointcloud2_;
+float P_INF_X2 = 0.1;
+float P_INF_Y2 = + P_INF_X2*cos(0.34906585);
+float N_INF_Y2 = - P_INF_X2*cos(0.34906585);
+float ZERO2 = 0.0;
+float pc_radius2_ = 0.03;
+float pc_height2_ = 0.0;
+float p_side_x2_ = 0.03;
+float p_side_y2_ = + p_side_x2_*cos(0.34906585);
+float n_side_y2_ = - p_side_x2_*cos(0.34906585);
+//////////////////////////////////////////////////////////////////////////////////////////////////
 
 //conveyor_test...
 int  m_iLoading_ID = 0;
@@ -943,108 +962,178 @@ void joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
 	
 }
 
-///////SICK TIM 571  Range Check////////////////////////////////////// mwcha ... front sick
+///////SICK TIM 571  Range Check//////////////////////////////////////
 void LaserScanCallback(const sensor_msgs::LaserScan::ConstPtr &msg)
 {
-    int size = msg->ranges.size();
-    // printf("Array size: %d\n", size);  Array size : 811
+    int size = msg->ranges.size(); //total 811 array
+    // int _closestIndex = -1;
+    // float m_fRight_back_min_val = 0.9; //150mm check
 
-    //Right Check//
-    int R_minIndex = 10;
-    int R_maxIndex = 405;
-    int R_closestIndex = -1;
-    double R_minVal = 0.2; //check distance of lidar ... 0.2m, 20cm
-
-    for (int i = R_minIndex; i < R_maxIndex; i++)
-    {
-        if ((msg->ranges[i] <= R_minVal) && (msg->ranges[i] >= msg->range_min) && (msg->ranges[i] <= msg->range_max))
-        {
-            R_minVal = msg->ranges[i];
-            R_closestIndex = i;
-        }
-    }
-    //printf("R_closestIndex: %d || check: %f \n" , R_closestIndex, msg->ranges[R_closestIndex]);
-    if(R_closestIndex > 0)
-        _pFlag_Value.m_bFlag_Obstacle_Right = true;
-    else
-        _pFlag_Value.m_bFlag_Obstacle_Right = false;
-
-    //Left Check//
-    int L_minIndex = 405;
-    int L_maxIndex = 810;
-    int L_closestIndex = -1;
-    double L_minVal = 0.2;
-
-    for (int i = L_minIndex; i < L_maxIndex; i++)
-    {
-        if ((msg->ranges[i] <= L_minVal) && (msg->ranges[i] >= msg->range_min) && (msg->ranges[i] <= msg->range_max))
-        {
-            L_minVal = msg->ranges[i];
-            L_closestIndex = i;
-        }
-    }
-    //printf("L_closestIndex: %d || check: %f \n" , L_closestIndex, msg->ranges[L_closestIndex]);
-    if(L_closestIndex > 0)
-        _pFlag_Value.m_bFlag_Obstacle_Left_b = true;
-    else
-        _pFlag_Value.m_bFlag_Obstacle_Left_b = false;
+    // //Rear Detection 45deg// --> m_bFlag_Obstacle_Right_b
+    // for (int i = 0; i < 30; i++)
+    // {
+    //     if ((msg->ranges[i] <= m_fRight_back_min_val) && (msg->ranges[i] >= msg->range_min) && (msg->ranges[i] <= msg->range_max))
+    //     {
+    //         m_fRight_back_min_val = msg->ranges[i];
+    //         _closestIndex = i;
+    //     }
+    // }
+    // //printf("_closestIndex: %d || check: %f \n" , _closestIndex, msg->ranges[_closestIndex]);
+    // if(_closestIndex > 0)
+    //     _pFlag_Value.m_bFlag_Obstacle_Right_b = true;
+    // else
+    //     _pFlag_Value.m_bFlag_Obstacle_Right_b = false;
 
 }
-void LaserScanCallback_b(const sensor_msgs::LaserScan::ConstPtr &msg) // mwcha ... back sick
+void LaserScanCallback_b(const sensor_msgs::LaserScan::ConstPtr &msg) 
 {
-    int size = msg->ranges.size();
+    int size = msg->ranges.size(); //total 811 array
+    // //Right Check//
+    // int R_minIndex = 10;
+    // int R_maxIndex = 405;
+    // int R_closestIndex = -1;
+    // double R_minVal = 0.2; 
 
-    //Right Check//
-    int R_minIndex = 10;
-    int R_maxIndex = 405;
-    int R_closestIndex = -1;
-    double R_minVal = 0.2; 
+    // for (int i = R_minIndex; i < R_maxIndex; i++)
+    // {
+    //     if ((msg->ranges[i] <= R_minVal) && (msg->ranges[i] >= msg->range_min) && (msg->ranges[i] <= msg->range_max))
+    //     {
+    //         R_minVal = msg->ranges[i];
+    //         R_closestIndex = i;
+    //     }
+    // }
+    // if(R_closestIndex > 0)
+    //     _pFlag_Value.m_bFlag_Obstacle_Right_b = true;
+    // else
+    //     _pFlag_Value.m_bFlag_Obstacle_Right_b = false;
 
-    for (int i = R_minIndex; i < R_maxIndex; i++)
+    // //Left Check//
+    // int L_minIndex = 405;
+    // int L_maxIndex = 810;
+    // int L_closestIndex = -1;
+    // double L_minVal = 0.2;
+
+    // for (int i = L_minIndex; i < L_maxIndex; i++)
+    // {
+    //     if ((msg->ranges[i] <= L_minVal) && (msg->ranges[i] >= msg->range_min) && (msg->ranges[i] <= msg->range_max))
+    //     {
+    //         L_minVal = msg->ranges[i];
+    //         L_closestIndex = i;
+    //     }
+    // }
+    // if(L_closestIndex > 0)
+    //     _pFlag_Value.m_bFlag_Obstacle_Left_b = true;
+    // else
+    //     _pFlag_Value.m_bFlag_Obstacle_Left_b = false;
+}
+
+void LaserScanMergeCallback(const sensor_msgs::LaserScan::ConstPtr &msg) 
+{
+    int size = msg->ranges.size(); // total 1084 array
+    //printf("scan_merge_data_size: %d \n", size);
+
+    //Rear Position////////////////////////////////////////////////////////////////////////////////////////////////////////
+    int Rear_closestIndex = -1;
+    float m_fRear_min_val = 0.434 + 0.3; //300mm check
+
+    //Rear 0 ~ 45deg
+    for (int i = 0; i < 136; i++)
     {
-        if ((msg->ranges[i] <= R_minVal) && (msg->ranges[i] >= msg->range_min) && (msg->ranges[i] <= msg->range_max))
+        if ((msg->ranges[i] <= m_fRear_min_val) && (msg->ranges[i] >= msg->range_min) && (msg->ranges[i] <= msg->range_max))
         {
-            R_minVal = msg->ranges[i];
-            R_closestIndex = i;
+            m_fRear_min_val = msg->ranges[i];
+            Rear_closestIndex = i;
         }
     }
-    //printf("R_closestIndex: %d || check: %f \n" , R_closestIndex, msg->ranges[R_closestIndex]);
-    if(R_closestIndex > 0)
-        _pFlag_Value.m_bFlag_Obstacle_Right_b = true;
-    else
-        _pFlag_Value.m_bFlag_Obstacle_Right_b = false;
-
-    //Left Check//
-    int L_minIndex = 405;
-    int L_maxIndex = 810;
-    int L_closestIndex = -1;
-    double L_minVal = 0.2;
-
-    for (int i = L_minIndex; i < L_maxIndex; i++)
+    //Rear 315 ~ 0deg
+    for (int i = 952; i < 1084; i++)
     {
-        if ((msg->ranges[i] <= L_minVal) && (msg->ranges[i] >= msg->range_min) && (msg->ranges[i] <= msg->range_max))
+        if ((msg->ranges[i] <= m_fRear_min_val) && (msg->ranges[i] >= msg->range_min) && (msg->ranges[i] <= msg->range_max))
         {
-            L_minVal = msg->ranges[i];
-            L_closestIndex = i;
+            m_fRear_min_val = msg->ranges[i];
+            Rear_closestIndex = i;
         }
     }
-    //printf("L_closestIndex: %d || check: %f \n" , L_closestIndex, msg->ranges[L_closestIndex]);
-    if(L_closestIndex > 0)
-        _pFlag_Value.m_bFlag_Obstacle_Left_b = true;
+    //printf("Rear_closestIndex: %d || check: %f \n" , Rear_closestIndex, msg->ranges[Rear_closestIndex]);
+    if(Rear_closestIndex > 0)
+        _pFlag_Value.m_bFlag_MergeScan_Rear = true;
     else
-        _pFlag_Value.m_bFlag_Obstacle_Left_b = false;
+        _pFlag_Value.m_bFlag_MergeScan_Rear = false;
+
+    //Right Position////////////////////////////////////////////////////////////////////////////////////////////////////////
+    int Right_closestIndex = -1;
+    float m_fRight_min_val = 0.434 + 0.3; //300mm check
+
+    //Rear 45 ~ 135deg
+    for (int i = 136; i < 408; i++)
+    {
+        if ((msg->ranges[i] <= m_fRight_min_val) && (msg->ranges[i] >= msg->range_min) && (msg->ranges[i] <= msg->range_max))
+        {
+            m_fRight_min_val = msg->ranges[i];
+            Right_closestIndex = i;
+        }
+    }
+    //printf("Right_closestIndex: %d || check: %f \n" , Right_closestIndex, msg->ranges[Right_closestIndex]);
+    if(Right_closestIndex > 0)
+        _pFlag_Value.m_bFlag_MergeScan_Right = true;
+    else
+        _pFlag_Value.m_bFlag_MergeScan_Right = false;
+
+    //Front Position////////////////////////////////////////////////////////////////////////////////////////////////////////
+    int Front_closestIndex = -1;
+    float m_fFront_min_val = 0.434 + 0.3; //300mm check
+
+    //Front 135 ~ 225deg
+    for (int i = 408; i < 680; i++)
+    {
+        if ((msg->ranges[i] <= m_fFront_min_val) && (msg->ranges[i] >= msg->range_min) && (msg->ranges[i] <= msg->range_max))
+        {
+            m_fFront_min_val = msg->ranges[i];
+            Front_closestIndex = i;
+        }
+        // marker & scan data to charging box ..jy
+        if(_pAR_tag_pose.m_iAR_tag_id != -1){
+            // _pAR_tag_pose.m_transform_pose_x
+            // _pAR_tag_pose.m_transform_pose_y
+        }
+    }
+    //printf("Front_closestIndex: %d || check: %f \n" , Front_closestIndex, msg->ranges[Front_closestIndex]);
+    if(Front_closestIndex > 0)
+        _pFlag_Value.m_bFlag_MergeScan_Front = true;
+    else
+        _pFlag_Value.m_bFlag_MergeScan_Front = false;
+
+    //Left Position////////////////////////////////////////////////////////////////////////////////////////////////////////
+    int Left_closestIndex = -1;
+    float m_fLeft_min_val = 0.434 + 0.3; //300mm check
+
+    //Rear 225 ~ 345deg
+    for (int i = 680; i < 952; i++)
+    {
+        if ((msg->ranges[i] <= m_fLeft_min_val) && (msg->ranges[i] >= msg->range_min) && (msg->ranges[i] <= msg->range_max))
+        {
+            m_fLeft_min_val = msg->ranges[i];
+            Left_closestIndex = i;
+        }
+    }
+    //printf("Left_closestIndex: %d || check: %f \n" , Left_closestIndex, msg->ranges[Left_closestIndex]);
+    if(Left_closestIndex > 0)
+        _pFlag_Value.m_bFlag_MergeScan_Left = true;
+    else
+        _pFlag_Value.m_bFlag_MergeScan_Left = false;
+
+
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void PCL1_Callback(const sensor_msgs::LaserScan::ConstPtr &msg) //realsense D455 ... update 231016 mwcha
+void PCL1_Callback(const sensor_msgs::LaserScan::ConstPtr &msg) //realsense D455 
 {
     int size = msg->ranges.size();
-    //printf("PCL1_size: %d \n",size); //848
     int PCL1_minIndex = 0;
     int PCL1_maxIndex = 1280; //848
     int PCL1_closestIndex = -1;
-    double PCL1_minVal = 0.8; //0.6
+    double PCL1_minVal = 0.5;
 
     for (int i = PCL1_minIndex; i < PCL1_maxIndex; i++)
     {
@@ -1054,7 +1143,6 @@ void PCL1_Callback(const sensor_msgs::LaserScan::ConstPtr &msg) //realsense D455
             PCL1_closestIndex = i;
         }
     }
-    //printf("PCL1_closestIndex: %d || check: %f \n" , PCL1_closestIndex, msg->ranges[PCL1_closestIndex]);
     if(PCL1_closestIndex > 0)
         _pFlag_Value.m_bFlag_Obstacle_PCL1 = true;
     else
@@ -1086,30 +1174,30 @@ void PCL2_Callback(const sensor_msgs::LaserScan::ConstPtr &msg)
         _pFlag_Value.m_bFlag_Obstacle_PCL2 = false;
 }
 
-void Cygbot_Callback(const sensor_msgs::LaserScan::ConstPtr &msg)
-{
-    int size = msg->ranges.size();
-    //printf("cygbot_size: %d \n",size);
-    int cygbot_minIndex = 1;
-    int cygbot_maxIndex = 160;
-    int cygbot_closestIndex = -1;
-    double cygbot_minVal = 0.5;
+// void Cygbot_Callback(const sensor_msgs::LaserScan::ConstPtr &msg)
+// {
+//     int size = msg->ranges.size();
+//     //printf("cygbot_size: %d \n",size);
+//     int cygbot_minIndex = 1;
+//     int cygbot_maxIndex = 160;
+//     int cygbot_closestIndex = -1;
+//     double cygbot_minVal = 0.5;
 
-    for (int i = cygbot_minIndex; i < cygbot_maxIndex; i++)
-    {
-        if ((msg->ranges[i] <= cygbot_minVal) && (msg->ranges[i] >= msg->range_min) && (msg->ranges[i] <= msg->range_max))
-        {
-            cygbot_minVal = msg->ranges[i];
-            cygbot_closestIndex = i;
-        }
-    }
-    //printf("cygbot_closestIndex: %d || check: %f \n" , cygbot_closestIndex, msg->ranges[cygbot_closestIndex]);
-    if(cygbot_closestIndex > 0)
-        _pFlag_Value.m_bFlag_Obstacle_cygbot = true;
-    else
-        _pFlag_Value.m_bFlag_Obstacle_cygbot = false;
+//     for (int i = cygbot_minIndex; i < cygbot_maxIndex; i++)
+//     {
+//         if ((msg->ranges[i] <= cygbot_minVal) && (msg->ranges[i] >= msg->range_min) && (msg->ranges[i] <= msg->range_max))
+//         {
+//             cygbot_minVal = msg->ranges[i];
+//             cygbot_closestIndex = i;
+//         }
+//     }
+//     //printf("cygbot_closestIndex: %d || check: %f \n" , cygbot_closestIndex, msg->ranges[cygbot_closestIndex]);
+//     if(cygbot_closestIndex > 0)
+//         _pFlag_Value.m_bFlag_Obstacle_cygbot = true;
+//     else
+//         _pFlag_Value.m_bFlag_Obstacle_cygbot = false;
     
-}
+// }
 
 double Quaternion2Yaw(double Quaternion_W, double Quaternion_X, double Quaternion_Y, double Quaternion_Z)
 {
@@ -1506,7 +1594,7 @@ void Teblocalplan_Callback(const geometry_msgs::PoseArray::ConstPtr& msg)
         {
             if(!m_flag_Dynamic_Teblocalplan_major_update)
             {
-                Dynamic_reconfigure_Teb_Set_DoubleParam("max_vel_theta", 0.5); //0.35
+                Dynamic_reconfigure_Teb_Set_DoubleParam("max_vel_theta", 0.35);
                 m_flag_Dynamic_Teblocalplan_major_update = true;
                 m_flag_Dynamic_Teblocalplan_minor_update = false;
                 _pFlag_Value.m_bTebMarker_reconfigure_flag = true;
@@ -1521,7 +1609,7 @@ void Teblocalplan_Callback(const geometry_msgs::PoseArray::ConstPtr& msg)
         {
             if(!m_flag_Dynamic_Teblocalplan_minor_update)
             {
-                Dynamic_reconfigure_Teb_Set_DoubleParam("max_vel_theta", 0.15);
+                Dynamic_reconfigure_Teb_Set_DoubleParam("max_vel_theta", 0.1); //0.15
                 m_flag_Dynamic_Teblocalplan_minor_update = true;
                 m_flag_Dynamic_Teblocalplan_major_update = false;
                 _pFlag_Value.m_bTebMarker_reconfigure_flag = true;
@@ -1705,26 +1793,7 @@ bool Depart_Station2Move()
 {
     bool bResult = false;
     geometry_msgs::TwistPtr cmd(new geometry_msgs::Twist());
-    if(_pAR_tag_pose.m_transform_pose_x <= 0.8) //800mm depart move ... 231130 mwcha
-    {
-        // if(_pRobot_Status.m_iCallback_Bumper = 8) //Back bumper mwcha 240329 mwcha
-        if(_pFlag_Value.m_bFlag_Obstacle_Left_b && _pFlag_Value.m_bFlag_Obstacle_Right_b)
-        {
-            printf("Detected laser scan behind obstacle !! \n");
-            cmd->linear.x =  0.0; 
-            cmd->angular.z = 0.0;
-            cmdpub_.publish(cmd);
-            bResult = false;
-        }
-        else
-        {
-            cmd->linear.x =  -0.05; 
-            cmd->angular.z = 0.0;
-            cmdpub_.publish(cmd);
-            bResult = false;
-        }    
-    }
-    else
+    if(_pAR_tag_pose.m_transform_pose_x > 0.8)
     {
         cmd->linear.x =  0.0; 
         cmd->angular.z = 0.0;
@@ -1736,7 +1805,24 @@ bool Depart_Station2Move()
         ex_iDocking_CommandMode = 0;
 
         bResult = true;
+        return bResult;
     }
+
+    // robot back obstacle check
+    if(_pFlag_Value.m_bFlag_Obstacle_cygbot)
+    {
+        printf("Detected laser scan behind obstacle !! \n");
+        cmd->linear.x =  0.0; 
+        cmd->angular.z = 0.0;
+        cmdpub_.publish(cmd);
+        bResult = false;
+        return bResult;
+    }
+
+    cmd->linear.x =  -0.05; 
+    cmd->angular.z = 0.0;
+    cmdpub_.publish(cmd);
+    bResult = false;
     
     return bResult;
 }
@@ -1796,7 +1882,7 @@ bool Un_Lift_Check() //240401 mwcha
 }
 
 
-bool Depart_10mm_Liftmove() // not use cygbot lidar because backward move in port ... 240403 mwcha
+bool Depart_10mm_Liftmove() 
 {
     if(_pRobot_Status.m_iCallback_Bumper = 1)
     {
@@ -2005,8 +2091,6 @@ bool Goto_Command(tetraDS_service::gotolocation::Request &req,
 	*/
 	res.command_Result = bResult;
 
-    //reset flag...
-    _pFlag_Value.m_bFlag_Disable_bumper = false;
     _pFlag_Value.m_bFlag_Initialpose = false;
 
     m_flag_setgoal = false;
@@ -2063,8 +2147,6 @@ bool Goto_Command2(tetraDS_service::gotolocation2::Request &req,
     bool command_Result
 	*/
 	res.command_Result = bResult;
-    //reset flag...
-    _pFlag_Value.m_bFlag_Disable_bumper = false;
     _pFlag_Value.m_bFlag_Initialpose = false;
 
     m_flag_setgoal = false;
@@ -2955,11 +3037,13 @@ void BatteryCallback(const std_msgs::Int32::ConstPtr& msg)
 void EMGCallback(const std_msgs::Int32::ConstPtr& msg)
 {
     _pRobot_Status.m_iCallback_EMG = msg->data;
+
+    if(_pRobot_Status.m_iCallback_EMG != 0&& _pFlag_Value.m_emgpush_flag) printf("[EMG] Push EMG button!! _ RED LED On \n");
+
     if(_pRobot_Status.m_iCallback_EMG != 0)
     {
         LED_Toggle_Control(1, 10,100,10,1);
         LED_Turn_On(18);
-        printf("[EMG] Push EMG button!! _ RED LED On \n");
         _pFlag_Value.m_emgpush_flag = false;
     }
     else
@@ -2972,94 +3056,91 @@ void EMGCallback(const std_msgs::Int32::ConstPtr& msg)
         }
     }
 }
-void BumperCallback(const std_msgs::Int32::ConstPtr& msg) // mwcha ... 231205
+void BumperCallback(const std_msgs::Int32::ConstPtr& msg) 
 {
     _pRobot_Status.m_iCallback_Bumper = msg->data;
 
-    if(_pRobot_Status.m_iCallback_Bumper != 0)
+    //wbjin_20240621
+    switch(_pRobot_Status.m_iCallback_Bumper)
     {
-        memcpy(&pointcloud_.data[0 * pointcloud_.point_step + pointcloud_.fields[0].offset], &p_side_x_, sizeof(float));
-        memcpy(&pointcloud_.data[0 * pointcloud_.point_step + pointcloud_.fields[1].offset], &p_side_y_, sizeof(float));
-        memcpy(&pointcloud_.data[1 * pointcloud_.point_step + pointcloud_.fields[0].offset], &pc_radius_, sizeof(float));
-        memcpy(&pointcloud_.data[2 * pointcloud_.point_step + pointcloud_.fields[0].offset], &p_side_x_, sizeof(float));
-        memcpy(&pointcloud_.data[2 * pointcloud_.point_step + pointcloud_.fields[1].offset], &n_side_y_, sizeof(float));
-        pointcloud_.header.stamp = ros::Time(0);
-        pointcloud_pub_.publish(pointcloud_);
+        case 0: //nomal
+            memcpy(&pointcloud_.data[0 * pointcloud_.point_step + pointcloud_.fields[0].offset], &P_INF_X, sizeof(float));
+            memcpy(&pointcloud_.data[0 * pointcloud_.point_step + pointcloud_.fields[1].offset], &P_INF_Y, sizeof(float));
+            memcpy(&pointcloud_.data[1 * pointcloud_.point_step + pointcloud_.fields[0].offset], &P_INF_X, sizeof(float));
+            memcpy(&pointcloud_.data[2 * pointcloud_.point_step + pointcloud_.fields[0].offset], &P_INF_X, sizeof(float));
+            memcpy(&pointcloud_.data[2 * pointcloud_.point_step + pointcloud_.fields[1].offset], &N_INF_Y, sizeof(float));
+            pointcloud_.header.stamp = ros::Time(0);
+            pointcloud_pub_.publish(pointcloud_);
 
-        if(!_pFlag_Value.m_bFlag_Disable_bumper)
-        {
-            if(docking_progress.data > 10 && docking_progress.data < 20)
+            memcpy(&pointcloud2_.data[0 * pointcloud2_.point_step + pointcloud2_.fields[0].offset], &P_INF_X2, sizeof(float));
+            memcpy(&pointcloud2_.data[0 * pointcloud2_.point_step + pointcloud2_.fields[1].offset], &P_INF_Y2, sizeof(float));
+            memcpy(&pointcloud2_.data[1 * pointcloud2_.point_step + pointcloud2_.fields[0].offset], &P_INF_X2, sizeof(float));
+            memcpy(&pointcloud2_.data[2 * pointcloud2_.point_step + pointcloud2_.fields[0].offset], &P_INF_X2, sizeof(float));
+            memcpy(&pointcloud2_.data[2 * pointcloud2_.point_step + pointcloud2_.fields[1].offset], &N_INF_Y2, sizeof(float));
+            pointcloud2_.header.stamp = ros::Time(0);
+            pointcloud_pub2_.publish(pointcloud2_);
+
+            if(_pFlag_Value.m_bumperhit_flag)
             {
-                printf("Front Bumper hit in the LIFT STATION [LIFT] ! \n");
-                ex_iDocking_CommandMode = 16;
+                LED_Toggle_Control(1, 3, 100, 3, 1);
+                LED_Turn_On(63); // White led
+                _pFlag_Value.m_bumperhit_flag = false;
             }
-            if(docking_progress.data > 20 && docking_progress.data < 30)
+            break;
+        case 1: //Front bumper On
+            memcpy(&pointcloud_.data[0 * pointcloud_.point_step + pointcloud_.fields[0].offset], &p_side_x_, sizeof(float));
+            memcpy(&pointcloud_.data[0 * pointcloud_.point_step + pointcloud_.fields[1].offset], &p_side_y_, sizeof(float));
+            memcpy(&pointcloud_.data[1 * pointcloud_.point_step + pointcloud_.fields[0].offset], &pc_radius_, sizeof(float));
+            memcpy(&pointcloud_.data[2 * pointcloud_.point_step + pointcloud_.fields[0].offset], &p_side_x_, sizeof(float));
+            memcpy(&pointcloud_.data[2 * pointcloud_.point_step + pointcloud_.fields[1].offset], &n_side_y_, sizeof(float));
+            pointcloud_.header.stamp = ros::Time(0);
+            pointcloud_pub_.publish(pointcloud_);
+
+            if(_pFlag_Value.m_bflagGo)
             {
-                printf("Front Bumper hit in the LIFT STATION [UN LIFT] ! \n");
-                ex_iDocking_CommandMode = 26;
+                goto_goal_id.id = "";
+                ROS_INFO("[Front_Bumper On]Goto Cancel call");
+                GotoCancel_pub.publish(goto_goal_id);
+                _pFlag_Value.m_bflagGo = false;
+                _pFlag_Value.m_bflagGo2 = true;
+
+                if(_pFlag_Value.BUMPER_BT)
+                    ex_iDocking_CommandMode = 100;
             }
-            LED_Toggle_Control(1, 10, 100, 10, 1);
-            LED_Turn_On(18);
-            printf("[Bumper] Push Bumper!! _ RED LED On \n");
-        }
 
-        else if(_pFlag_Value.m_bflagGo)
-        {
-            goto_goal_id.id = "";
-            ROS_INFO("[Bumper On]Goto Cancel call");
-            GotoCancel_pub.publish(goto_goal_id);
-            _pFlag_Value.m_bflagGo = false;
-            _pFlag_Value.m_bflagGo2 = true;
+            _pFlag_Value.m_bumperhit_flag = true;
+            break;
+        case 8: //Rear bumper On
+            memcpy(&pointcloud2_.data[0 * pointcloud2_.point_step + pointcloud2_.fields[0].offset], &p_side_x2_, sizeof(float));
+            memcpy(&pointcloud2_.data[0 * pointcloud2_.point_step + pointcloud2_.fields[1].offset], &p_side_y2_, sizeof(float));
+            memcpy(&pointcloud2_.data[1 * pointcloud2_.point_step + pointcloud2_.fields[0].offset], &pc_radius2_, sizeof(float));
+            memcpy(&pointcloud2_.data[2 * pointcloud2_.point_step + pointcloud2_.fields[0].offset], &p_side_x2_, sizeof(float));
+            memcpy(&pointcloud2_.data[2 * pointcloud2_.point_step + pointcloud2_.fields[1].offset], &n_side_y2_, sizeof(float));
+            pointcloud2_.header.stamp = ros::Time(0);
+            pointcloud_pub2_.publish(pointcloud2_);
 
-            if(_pFlag_Value.BUMPER_BT)
-                ex_iDocking_CommandMode = 100;
-        }
-        _pFlag_Value.m_bumperhit_flag = true;
+            if(_pFlag_Value.m_bflagGo)
+            {
+                goto_goal_id.id = "";
+                ROS_INFO("[Rear_Bumper On]Goto Cancel call");
+                GotoCancel_pub.publish(goto_goal_id);
+                _pFlag_Value.m_bflagGo = false;
+                _pFlag_Value.m_bflagGo2 = true;
+
+                if(_pFlag_Value.BUMPER_BT)
+                    ex_iDocking_CommandMode = 100;
+            }
+            
+            _pFlag_Value.m_bumperhit_flag = true;
+            break;
+        case 9: //Front bumper && Rear bumper ON
+
+            break;
+        default:
+            break;
     }
-    else if(_pRobot_Status.m_iCallback_Bumper == 2 || _pRobot_Status.m_iCallback_Bumper == 3)
-    {
-        printf("[Switch] Push Servo Switch Button !! \n");
-    }
-    else // 230629 ... update loop by mwcha
-    { 
-        memcpy(&pointcloud_.data[0 * pointcloud_.point_step + pointcloud_.fields[0].offset], &P_INF_X, sizeof(float));
-        memcpy(&pointcloud_.data[0 * pointcloud_.point_step + pointcloud_.fields[1].offset], &P_INF_Y, sizeof(float));
-        memcpy(&pointcloud_.data[1 * pointcloud_.point_step + pointcloud_.fields[0].offset], &P_INF_X, sizeof(float));
-        memcpy(&pointcloud_.data[2 * pointcloud_.point_step + pointcloud_.fields[0].offset], &P_INF_X, sizeof(float));
-        memcpy(&pointcloud_.data[2 * pointcloud_.point_step + pointcloud_.fields[1].offset], &N_INF_Y, sizeof(float));
-        pointcloud_.header.stamp = ros::Time(0);
-        pointcloud_pub_.publish(pointcloud_);
-
-        if(_pFlag_Value.m_bumperhit_flag)
-        {
-            LED_Toggle_Control(1, 3, 100, 3, 1);
-            LED_Turn_On(63); // White led
-            _pFlag_Value.m_bumperhit_flag = false;
-        }
-    }
+    
 }
-/*
-void Ultrasonic_DL_Callback(const sensor_msgs::Range::ConstPtr& msg)
-{
-    m_Ultrasonic_DL_Range = msg->range;
-}
-
-void Ultrasonic_DR_Callback(const sensor_msgs::Range::ConstPtr& msg)
-{
-    m_Ultrasonic_DR_Range = msg->range;
-}
-
-
-void Ultrasonic_RL_Callback(const sensor_msgs::Range::ConstPtr& msg)
-{
-    m_Ultrasonic_RL_Range = msg->range;
-}
-
-void Ultrasonic_RR_Callback(const sensor_msgs::Range::ConstPtr& msg)
-{
-    m_Ultrasonic_RR_Range = msg->range;
-}
-*/
 
 void LoadcellCallback(const std_msgs::Float64::ConstPtr& msg)
 {
@@ -3566,17 +3647,17 @@ bool Un_Approach_Station2Move2()
 double Rotation_Movement()
 {
     double iResult = 0.1;
-/*
-    if(m_Ultrasonic_DR_Range < 0.3 )
+
+    if(_pFlag_Value.m_bFlag_MergeScan_Left)
     {
         m_iRotation_Mode = 1;
         printf(" CCW Rotation--- \n");
     }
-    else if(m_Ultrasonic_DL_Range < 0.3)
+    else if(_pFlag_Value.m_bFlag_MergeScan_Right)
     {
         m_iRotation_Mode = 2;
         printf(" CW Rotation+++ \n");
-    }*/
+    }
 
     switch(m_iRotation_Mode)
     {
@@ -3640,8 +3721,8 @@ bool BumperCollision_Behavior()
     return bResult;
 }
 
-/****************************************************************/
-//Charging Station Docking Function // update by mwcha ... 231117
+
+//Charging Station Docking Function 
 bool ChargingStation_tracking(bool bOn, int marker_id)
 {
     bool bResult = false;
@@ -3651,12 +3732,15 @@ bool ChargingStation_tracking(bool bOn, int marker_id)
     if(bOn)
     {
         float m_fdistance = 0.0;
+        if(_pAR_tag_pose.m_iAR_tag_id == marker_id)
+        {
             m_fdistance = sqrt(_pAR_tag_pose.m_transform_pose_x * _pAR_tag_pose.m_transform_pose_x + _pAR_tag_pose.m_transform_pose_y * _pAR_tag_pose.m_transform_pose_y);
-            printf("m_fdistance: %.5f \n", m_fdistance);
-            if(m_fdistance > 0.6 && m_fdistance < 2.0) // update by mwcha ... 231130
+            //printf("master_distance: %.5f \n", m_fdistance);
+            //if(m_fdistance > 0.9 && m_fdistance < 2.0)
+            if(m_fdistance > 0.65 && m_fdistance < 2.0)
             {
-                cmd->linear.x = 1.0 * (m_fdistance) * 0.125; // update by mwcha ... 231130
-                printf("linear X velocity: %.2f \n", cmd->linear.x);
+                cmd->linear.x = 1.0 * (m_fdistance /1.2) * 0.1; // 0.15 
+                //printf("linear velocity: %.2f \n", cmd->linear.x);
                 if(cmd->linear.x > 1.0)
                 {
                     //Linear Over speed exit loop...
@@ -3665,9 +3749,8 @@ bool ChargingStation_tracking(bool bOn, int marker_id)
                     printf("[Linear Over speed]: follower is closing \n");
                     return false;
                 }
-                
                 cmd->angular.z = -1.0 * atan2(_pAR_tag_pose.m_transform_pose_y, _pAR_tag_pose.m_transform_pose_x) / 1.25;
-                //printf("angular velocity: %.2f \n", cmd->angular.z);
+                //printf("angular velocity: %.2f \n", cmd-angular.z);
                 if((cmd->angular.z > 1.0) || (cmd->angular.z < -1.0))
                 {
                     //Angular Over speed exit loop......
@@ -3676,7 +3759,6 @@ bool ChargingStation_tracking(bool bOn, int marker_id)
                     printf("[Angular Over speed]: follower is closing \n");
                     return false;
                 }
-                
                 cmdpub_.publish(cmd);
             }
             else
@@ -3687,8 +3769,26 @@ bool ChargingStation_tracking(bool bOn, int marker_id)
                 ex_iDocking_CommandMode = 3;
                 m_iNoMarker_cnt = 0;
             }
-        
-
+        }
+        else
+        {
+            printf("No Marker, Rotation Movement !! \n");
+            cmd->angular.z = Rotation_Movement(); //0.1;
+            cmdpub_.publish(cmd);
+            if(m_iNoMarker_cnt > 4000) //retry timeout!!
+            {
+                m_iNoMarker_cnt = 0;
+                cmd->linear.x =  0.0; 
+                cmd->angular.z = 0.0;
+                cmdpub_.publish(cmd);
+                printf("DockingStation scan Fail !! \n");
+                ex_iDocking_CommandMode = 9;
+            }
+            else
+            {
+                m_iNoMarker_cnt++;
+            }
+        }
     }
     else
     {
@@ -3696,10 +3796,9 @@ bool ChargingStation_tracking(bool bOn, int marker_id)
         cmd->angular.z = 0.0;
         cmdpub_.publish(cmd);
         printf("Docking Loop STOP!_not find Marker!! \n");
-        ex_iDocking_CommandMode = 119; //240202 mwcha
+        ex_iDocking_CommandMode = 0;
     }
     
-
     bResult = true;
     return bResult;
 }
@@ -3711,10 +3810,11 @@ bool ChargingStation_Yaw_tracking()
     geometry_msgs::TwistPtr cmd(new geometry_msgs::Twist());
     
     int m_iback_cnt = 0;
+    int m_iyaw_cnt = 0;
     float m_fdistance = 0.0;
     m_fdistance = sqrt(_pAR_tag_pose.m_transform_pose_x * _pAR_tag_pose.m_transform_pose_x + _pAR_tag_pose.m_transform_pose_y * _pAR_tag_pose.m_transform_pose_y);
 
-    if(_pAR_tag_pose.m_target_yaw <= 0.0174533 && _pAR_tag_pose.m_target_yaw >= -0.0174533) //+- 1.0deg
+    if(_pAR_tag_pose.m_target_yaw <= 0.00872665 && _pAR_tag_pose.m_target_yaw >= -0.00872665) //+- 0.5deg
     {
         ex_iDocking_CommandMode = 4;
         bResult = true;
@@ -3724,26 +3824,28 @@ bool ChargingStation_Yaw_tracking()
     if(_pAR_tag_pose.m_target_yaw > 0)
     {
         printf("++dir \n");
-        cmd->angular.z = -1.0 * _pAR_tag_pose.m_target_yaw * 1.6;
-        cmdpub_.publish(cmd);
-        sleep(2);
-
-        if(m_fdistance > 2.0 || m_fdistance < -2.0)
+        
+        while(m_iyaw_cnt < 20) // 20
         {
-            printf("[Error] Marker too far away !! \n");
-            cmd->angular.z = 0.0;
-            cmd->linear.x = 0.0;
-            cmdpub_.publish(cmd);
-
-            ex_iDocking_CommandMode = 9;
-            bResult = false;
-            return bResult;
+            if(_pFlag_Value.m_bFlag_MergeScan_Left)
+            {
+                cmd->angular.z = 0.0;
+                cmd->linear.x = 0.0;
+                cmdpub_.publish(cmd);
+            }
+            else
+            {
+                cmd->linear.x = 0.0;
+                cmd->angular.z = -1.0 * _pAR_tag_pose.m_target_yaw * 0.9; // 1.6
+                cmdpub_.publish(cmd);
+                m_iyaw_cnt++;
+            }
+            usleep(100000); //100ms
         }
 
-
-        while(m_iback_cnt < 30)
+        while(m_iback_cnt < 10) // 30
         {
-            if(_pFlag_Value.m_bFlag_Obstacle_cygbot)
+            if(_pFlag_Value.m_bFlag_MergeScan_Rear)
             {
                 cmd->angular.z = 0.0;
                 cmd->linear.x = 0.0;
@@ -3770,25 +3872,28 @@ bool ChargingStation_Yaw_tracking()
     else
     {
         printf("--dir \n");
-        cmd->angular.z = -1.0 * _pAR_tag_pose.m_target_yaw * 1.6;
-        cmdpub_.publish(cmd);
-        sleep(2);
-
-        if(m_fdistance > 2.0 || m_fdistance < -2.0)
+        
+        while(m_iyaw_cnt < 20) // 20
         {
-            printf("[Error] Marker too far away !! \n");
-            cmd->angular.z = 0.0;
-            cmd->linear.x = 0.0;
-            cmdpub_.publish(cmd);
-
-            ex_iDocking_CommandMode = 9;
-            bResult = false;
-            return bResult;
+            if(_pFlag_Value.m_bFlag_MergeScan_Right)
+            {
+                cmd->angular.z = 0.0;
+                cmd->linear.x = 0.0;
+                cmdpub_.publish(cmd);
+            }
+            else
+            {
+                cmd->linear.x = 0.0;
+                cmd->angular.z = -1.0 * _pAR_tag_pose.m_target_yaw * 0.9; // 1.6
+                cmdpub_.publish(cmd);
+                m_iyaw_cnt++;
+            }
+            usleep(100000); //100ms
         }
 
-        while(m_iback_cnt < 30)
+        while(m_iback_cnt < 10) // 30
         {
-            if(_pFlag_Value.m_bFlag_Obstacle_cygbot)
+            if(_pFlag_Value.m_bFlag_MergeScan_Rear)
             {
                 cmd->angular.z = 0.0;
                 cmd->linear.x = 0.0;
@@ -3827,11 +3932,9 @@ bool ChargingStation_tracking2(int marker_id)
     if(_pAR_tag_pose.m_iAR_tag_id == marker_id)
     {
         m_fdistance = sqrt(_pAR_tag_pose.m_transform_pose_x * _pAR_tag_pose.m_transform_pose_x + _pAR_tag_pose.m_transform_pose_y * _pAR_tag_pose.m_transform_pose_y);
-        //printf("master_distance: %.5f \n", m_fdistance);
-        if(_pRobot_Status.m_iCallback_Charging_status < 2)  // ( || (_pRobot_Status.m_iCallback_Bumper != 0) ) reversing until bumper docking LOOP ... mwcha
+        if(_pRobot_Status.m_iCallback_Charging_status < 2) 
         {
             cmd->linear.x = 1.0 * (m_fdistance /2.0) * 0.1; // max speed 0.1m/s
-            //printf("linear velocity: %.2f \n", cmd->linear.x);
             if(cmd->linear.x > 1.0)
             {
                 //Linear Over speed exit loop......
@@ -3841,8 +3944,7 @@ bool ChargingStation_tracking2(int marker_id)
                 return false;
             }
             
-            cmd->angular.z = -1.0 * atan2(_pAR_tag_pose.m_transform_pose_y, _pAR_tag_pose.m_transform_pose_x) / 1.25;
-            //printf("angular velocity: %.2f \n", cmd->angular.z);
+            cmd->angular.z = -1.0 * atan2(_pAR_tag_pose.m_transform_pose_y, _pAR_tag_pose.m_transform_pose_x) / 1.5;
             if((cmd->angular.z > 1.0) || (cmd->angular.z < -1.0))
             {
                 //Angular Over speed exit loop......
@@ -4011,7 +4113,7 @@ bool LiftStation_Yaw_tracking()
 
         while(m_iback_cnt < 30)
         {
-            if(_pFlag_Value.m_bFlag_Obstacle_Left_b && _pFlag_Value.m_bFlag_Obstacle_Right_b)
+            if(_pFlag_Value.m_bFlag_Obstacle_cygbot)
             {
                 cmd->angular.z = 0.0;
                 cmd->linear.x = 0.0;
@@ -4055,7 +4157,7 @@ bool LiftStation_Yaw_tracking()
 
         while(m_iback_cnt < 30)
         {
-            if(_pFlag_Value.m_bFlag_Obstacle_Left_b && _pFlag_Value.m_bFlag_Obstacle_Right_b)
+            if(_pFlag_Value.m_bFlag_Obstacle_cygbot)
             {
                 cmd->angular.z = 0.0;
                 cmd->linear.x = 0.0;
@@ -4801,7 +4903,6 @@ void *DockingThread_function(void *data)
                 
                 break;
             /****************************************************************/
-            // Station Docking Loop ... H model docking ... docking station marker size = 10 // ... 231117 update by mwcha
             case 1:
                 set_armarker10();
                 printf("!! DockingThread_function_1 !! \n");
@@ -4825,6 +4926,7 @@ void *DockingThread_function(void *data)
                 docking_progress_pub.publish(docking_progress);
                 break;
             case 3:
+                sleep(1);
                 _pAR_tag_pose.m_target_yaw = _pAR_tag_pose.m_fAR_tag_pitch;
                 ChargingStation_Yaw_tracking();
                 if(_pFlag_Value.m_bfalg_DockingExit)
@@ -5046,6 +5148,7 @@ void *DockingThread_function(void *data)
             case 119: //Retry Goto Home...
                 printf(" Retry Goto Home ! \n");
                 //costmap clear call//
+                /* 
                 clear_costmap_client.call(m_request);
                 _pGoal_pose.goal_positionX = _pHomePose.HOME_dPOSITION_X;
                 _pGoal_pose.goal_positionY = _pHomePose.HOME_dPOSITION_Y;
@@ -5058,6 +5161,7 @@ void *DockingThread_function(void *data)
                 goto_goal_id.id = "HOME";
                 setGoal(goal);
                 _pFlag_Value.m_bflag_ComebackHome = true;
+                */
                 ex_iDocking_CommandMode = 0;
 
             case 151: //Lift UP call...
@@ -6048,11 +6152,13 @@ int main (int argc, char** argv)
     //Laser Scan subscriber//
     ros::Subscriber scan_sub = nh.subscribe("scan", 100, LaserScanCallback);
     ros::Subscriber scan_b_sub = nh.subscribe("scan_b", 100, LaserScanCallback_b); //Back tim571 laser scan ... add by mwcha
+    //Laser Scan Merge subscriber//_add...wbjin 240626
+    ros::Subscriber scan_merge_sub = nh.subscribe("scan_merge", 100, LaserScanMergeCallback);
     //Depthimage to scan subscriber//
     ros::Subscriber pcl1_sub = nh.subscribe("pcl_1", 100, PCL1_Callback); //Front Realsense D435F
     //ros::Subscriber pcl2_sub = nh.subscribe("pcl_2", 100, PCL2_Callback); //Rear Realsense D435F
     //Cygbot LiDARto scan subscriber//
-    ros::Subscriber cygbot_sub = nh.subscribe("scan_laser", 100, Cygbot_Callback); //Rear Cygbot LiDAR
+    //ros::Subscriber cygbot_sub = nh.subscribe("scan_laser", 100, Cygbot_Callback); //Rear Cygbot LiDAR
 
     //virtual costmap_pub
     virtual_obstacle_pub = nh.advertise<virtual_costmap_layer::Obstacles>("virtual_costamp_layer/obsctacles", 100);
@@ -6204,7 +6310,7 @@ int main (int argc, char** argv)
     //ros::Subscriber ultrasonic_RR = nInfo.subscribe<sensor_msgs::Range>("Ultrasonic_R_R", 10, Ultrasonic_RR_Callback);
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    //bumper_data to Pointcloud2_data///
+    //bumper_data to Pointcloud2_data/// //Front Bumper_wbjin_20240621//
     ros::NodeHandle nbumper;
     pointcloud_.header.frame_id = tf_prefix_ + "/Front_bumper";
     pointcloud_.width  = 3;
@@ -6235,7 +6341,40 @@ int main (int argc, char** argv)
     memcpy(&pointcloud_.data[0 * pointcloud_.point_step + pointcloud_.fields[2].offset], &pc_height_, sizeof(float));
     memcpy(&pointcloud_.data[1 * pointcloud_.point_step + pointcloud_.fields[2].offset], &pc_height_, sizeof(float));
     memcpy(&pointcloud_.data[2 * pointcloud_.point_step + pointcloud_.fields[2].offset], &pc_height_, sizeof(float));
-    pointcloud_pub_ = nbumper.advertise <sensor_msgs::PointCloud2> ("bumper_pointcloud", 100);
+    pointcloud_pub_ = nbumper.advertise <sensor_msgs::PointCloud2> ("bumper_pointcloud", 10);
+
+    //bumper_data to Pointcloud2_data/// //Rear Bumper_wbjin_20240621//
+    ros::NodeHandle nbumper2;
+    pointcloud2_.header.frame_id = tf_prefix_ + "/Rear_bumper";
+    pointcloud2_.width  = 3;
+    pointcloud2_.height = 1;
+    pointcloud2_.fields.resize(3);
+    // Set x/y/z as the only fields
+    pointcloud2_.fields[0].name = "x";
+    pointcloud2_.fields[1].name = "y";
+    pointcloud2_.fields[2].name = "z";
+    int offset2 = 0; 
+    // All offsets are *4, as all field data types are float32
+    for (size_t d = 0; d < pointcloud2_.fields.size(); ++d, offset2 += 4)
+    {
+        pointcloud2_.fields[d].count    = 1;
+        pointcloud2_.fields[d].offset   = offset2;
+        pointcloud2_.fields[d].datatype = sensor_msgs::PointField::FLOAT32;
+    }
+    pointcloud2_.point_step = offset2;
+    pointcloud2_.row_step   = pointcloud2_.point_step * pointcloud2_.width;
+
+    pointcloud2_.data.resize(3 * pointcloud2_.point_step);
+    pointcloud2_.is_bigendian = false;
+    pointcloud2_.is_dense     = true;
+
+    // y: always 0 for central bumper
+    memcpy(&pointcloud2_.data[1 * pointcloud2_.point_step + pointcloud2_.fields[1].offset], &ZERO2, sizeof(float));
+    // z: constant elevation from base frame
+    memcpy(&pointcloud2_.data[0 * pointcloud2_.point_step + pointcloud2_.fields[2].offset], &pc_height2_, sizeof(float));
+    memcpy(&pointcloud2_.data[1 * pointcloud2_.point_step + pointcloud2_.fields[2].offset], &pc_height2_, sizeof(float));
+    memcpy(&pointcloud2_.data[2 * pointcloud2_.point_step + pointcloud2_.fields[2].offset], &pc_height2_, sizeof(float));
+    pointcloud_pub2_ = nbumper2.advertise <sensor_msgs::PointCloud2> ("bumper_pointcloud2", 10);
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     //Docking Loop 

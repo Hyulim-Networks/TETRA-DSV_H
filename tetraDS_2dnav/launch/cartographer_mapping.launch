@@ -10,7 +10,8 @@
           -configuration_basename backpack_2d.lua"
        output="screen">
 
-    <remap from="echoes" to="scan"/>
+    <remap from="scan" to="scan_merge"/> <!--scan -->
+    <remap from="echoes" to="scan_merge"/> <!--scan -->
     <remap from="$(optenv ROS_NAMESPACE)/odom" to="$(optenv ROS_NAMESPACE)/odometry/filtered" />
     <remap from="imu" to="$(optenv ROS_NAMESPACE)/imu/data" />
   </node>

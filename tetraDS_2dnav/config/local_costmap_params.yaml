@@ -17,8 +17,6 @@ local_costmap:
       type: "costmap_2d::VoxelLayer"
     - name: rgbd_obstacle_layer1   
       type: "spatio_temporal_voxel_layer/SpatioTemporalVoxelLayer"
-    - name: cygbot_obstacle_layer   
-      type: "spatio_temporal_voxel_layer/SpatioTemporalVoxelLayer"
     - name: virtual_layer2
       type: "virtual_costmap_layer2::VirtualLayer2"
     - name: inflation_layer

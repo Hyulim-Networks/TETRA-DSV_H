@@ -55,6 +55,22 @@
     <child link="laser_link2" />
   </joint>
 
+  <link name="laser_merge">
+      <visual>
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <geometry>
+          <box size="0.01 0.01 0.01" />
+        </geometry>
+        <material name="Grey" />
+      </visual>
+  </link>
+
+  <joint name="base_link_to_laser_merge" type="fixed">
+    <origin xyz="0.0 0.0 0.15182" rpy="0 0 0" />
+    <parent link="base_link"/>
+    <child link="laser_merge" />
+  </joint>
+
   <link name="imu_link">
       <visual>
         <origin xyz="0 0 0" rpy="0 0 0" />
@@ -82,7 +98,7 @@
   </link>
 
   <joint name="usb_cam" type="fixed">
-    <origin xyz="0.3325 0.0 0.156" rpy="1.5708 3.14159 1.5708"/>
+    <origin xyz="0.3325 0.0 0.156" rpy="${PI*0.5} ${PI} ${PI*0.5}"/>
     <parent link="base_link"/>
     <child link="usb_cam" />
   </joint>  
@@ -102,6 +118,22 @@
     <origin xyz="0.434 0.0 -0.05" rpy="0 0 0" />
     <parent link="base_link"/>
     <child link="Front_bumper" />
+  </joint>
+
+ <link name="Rear_bumper">
+      <visual>
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <geometry>
+          <box size="0.01 0.580 0.01" />
+        </geometry>
+        <material name="TransparentBlack" />
+      </visual>
+  </link>
+
+  <joint name="Rear_bumper" type="fixed">
+    <origin xyz="-0.434 0.0 -0.05" rpy="0 0 3.14" />
+    <parent link="base_link"/>
+    <child link="Rear_bumper" />
   </joint>
 
 

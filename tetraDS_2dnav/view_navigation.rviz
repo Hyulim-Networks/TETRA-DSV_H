@@ -4,11 +4,13 @@ Panels:
     Name: Displays
     Property Tree Widget:
       Expanded:
+        - /Global Options1
         - /TF1/Frames1
+        - /SCAN1/LaserScan3
         - /Marker1/Namespaces1
         - /Odometry1/Shape1
       Splitter Ratio: 0.6295454502105713
-    Tree Height: 394
+    Tree Height: 461
   - Class: rviz/Selection
     Name: Selection
   - Class: rviz/Tool Properties
@@ -72,6 +74,11 @@ Visualization Manager:
           Show Trail: false
           Value: true
         Link Tree Style: Links in Alphabetic Order
+        Rear_bumper:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
         base_Upperlink:
           Alpha: 1
           Show Axes: false
@@ -137,6 +144,11 @@ Visualization Manager:
           Show Axes: false
           Show Trail: false
           Value: true
+        laser_merge:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
         tim571_b_lidar:
           Alpha: 1
           Show Axes: false
@@ -154,39 +166,134 @@ Visualization Manager:
           Value: true
       Name: RobotModel
       Robot Description: robot_description
-      TF Prefix: TE2323002
+      TF Prefix: TE2416003
       Update Interval: 0
       Value: true
       Visual Enabled: true
     - Class: rviz/TF
-      Enabled: false
+      Enabled: true
       Frame Timeout: 15
       Frames:
-        All Enabled: true
+        All Enabled: false
+        TE2416003/Front_bumper:
+          Value: true
+        TE2416003/Rear_bumper:
+          Value: false
+        TE2416003/base_Upperlink:
+          Value: false
+        TE2416003/base_footprint:
+          Value: false
+        TE2416003/base_l_wheel_link:
+          Value: false
+        TE2416003/base_link:
+          Value: false
+        TE2416003/base_r_wheel_link:
+          Value: false
+        TE2416003/behind_l_caster_link:
+          Value: false
+        TE2416003/behind_r_caster_link:
+          Value: false
+        TE2416003/camera1_color_frame:
+          Value: false
+        TE2416003/camera1_color_optical_frame:
+          Value: false
+        TE2416003/camera1_depth_frame:
+          Value: false
+        TE2416003/camera1_depth_optical_frame:
+          Value: false
+        TE2416003/camera1_link:
+          Value: false
+        TE2416003/front_l_caster_link:
+          Value: false
+        TE2416003/front_r_caster_link:
+          Value: false
+        TE2416003/imu_link:
+          Value: false
+        TE2416003/laser:
+          Value: true
+        TE2416003/laser_link2:
+          Value: true
+        TE2416003/laser_merge:
+          Value: true
+        TE2416003/odom:
+          Value: true
+        TE2416003/tim571_b_lidar:
+          Value: false
+        TE2416003/tim571_f_lidar:
+          Value: false
+        TE2416003/usb_cam:
+          Value: false
+        ar_marker_0:
+          Value: true
+        map:
+          Value: true
       Marker Scale: 1
       Name: TF
       Show Arrows: true
       Show Axes: true
       Show Names: true
       Tree:
-        {}
+        map:
+          TE2416003/odom:
+            TE2416003/base_footprint:
+              TE2416003/base_link:
+                TE2416003/Front_bumper:
+                  {}
+                TE2416003/Rear_bumper:
+                  {}
+                TE2416003/base_Upperlink:
+                  {}
+                TE2416003/base_l_wheel_link:
+                  {}
+                TE2416003/base_r_wheel_link:
+                  {}
+                TE2416003/behind_l_caster_link:
+                  {}
+                TE2416003/behind_r_caster_link:
+                  {}
+                TE2416003/camera1_link:
+                  TE2416003/camera1_color_frame:
+                    TE2416003/camera1_color_optical_frame:
+                      {}
+                  TE2416003/camera1_depth_frame:
+                    TE2416003/camera1_depth_optical_frame:
+                      {}
+                TE2416003/front_l_caster_link:
+                  {}
+                TE2416003/front_r_caster_link:
+                  {}
+                TE2416003/imu_link:
+                  {}
+                TE2416003/laser:
+                  {}
+                TE2416003/laser_link2:
+                  {}
+                TE2416003/laser_merge:
+                  {}
+                TE2416003/tim571_b_lidar:
+                  {}
+                TE2416003/tim571_f_lidar:
+                  {}
+                TE2416003/usb_cam:
+                  ar_marker_0:
+                    {}
       Update Interval: 0
-      Value: false
+      Value: true
     - Class: rviz/Group
       Displays:
         - Alpha: 1
           Autocompute Intensity Bounds: true
           Autocompute Value Bounds:
-            Max Value: 6.058413505554199
-            Min Value: -6.2873029708862305
+            Max Value: 5.514501094818115
+            Min Value: -4.611384868621826
             Value: true
           Axis: X
           Channel Name: intensity
           Class: rviz/LaserScan
           Color: 138; 226; 52
-          Color Transformer: FlatColor
+          Color Transformer: AxisColor
           Decay Time: 0
-          Enabled: true
+          Enabled: false
           Invert Rainbow: false
           Max Color: 255; 255; 255
           Min Color: 0; 0; 0
@@ -197,22 +304,50 @@ Visualization Manager:
           Size (Pixels): 3
           Size (m): 0.009999999776482582
           Style: Points
-          Topic: /TE2323002/scan
+          Topic: /TE2416003/scan
           Unreliable: false
           Use Fixed Frame: true
           Use rainbow: true
-          Value: true
+          Value: false
         - Alpha: 1
           Autocompute Intensity Bounds: true
           Autocompute Value Bounds:
-            Max Value: 1.9581176042556763
-            Min Value: 1.4705326557159424
+            Max Value: 4.530028820037842
+            Min Value: -3.510671854019165
             Value: true
           Axis: X
           Channel Name: intensity
           Class: rviz/LaserScan
           Color: 239; 41; 41
-          Color Transformer: FlatColor
+          Color Transformer: AxisColor
+          Decay Time: 0
+          Enabled: false
+          Invert Rainbow: false
+          Max Color: 255; 255; 255
+          Min Color: 0; 0; 0
+          Name: LaserScan
+          Position Transformer: XYZ
+          Queue Size: 10
+          Selectable: true
+          Size (Pixels): 3
+          Size (m): 0.029999999329447746
+          Style: Flat Squares
+          Topic: /TE2416003/scan_b
+          Unreliable: false
+          Use Fixed Frame: true
+          Use rainbow: true
+          Value: false
+        - Alpha: 1
+          Autocompute Intensity Bounds: true
+          Autocompute Value Bounds:
+            Max Value: 4.58642053604126
+            Min Value: -4.714559555053711
+            Value: true
+          Axis: X
+          Channel Name: intensity
+          Class: rviz/LaserScan
+          Color: 255; 255; 255
+          Color Transformer: AxisColor
           Decay Time: 0
           Enabled: true
           Invert Rainbow: false
@@ -225,7 +360,7 @@ Visualization Manager:
           Size (Pixels): 3
           Size (m): 0.029999999329447746
           Style: Flat Squares
-          Topic: /TE2323002/scan_b
+          Topic: /TE2416003/scan_merge
           Unreliable: false
           Use Fixed Frame: true
           Use rainbow: true
@@ -238,7 +373,7 @@ Visualization Manager:
       Draw Behind: false
       Enabled: true
       Name: Map
-      Topic: /TE2323002/map
+      Topic: /TE2416003/map
       Unreliable: false
       Use Timestamp: false
       Value: true
@@ -250,7 +385,7 @@ Visualization Manager:
           Draw Behind: true
           Enabled: true
           Name: Costmap
-          Topic: /TE2323002/move_base/global_costmap/costmap
+          Topic: /TE2416003/move_base/global_costmap/costmap
           Unreliable: false
           Use Timestamp: false
           Value: true
@@ -274,7 +409,7 @@ Visualization Manager:
           Radius: 0.029999999329447746
           Shaft Diameter: 0.10000000149011612
           Shaft Length: 0.10000000149011612
-          Topic: /TE2323002/move_base/TebLocalPlannerROS/global_plan
+          Topic: /TE2416003/move_base/TebLocalPlannerROS/global_plan
           Unreliable: false
           Value: false
       Enabled: true
@@ -287,7 +422,7 @@ Visualization Manager:
           Draw Behind: false
           Enabled: true
           Name: Costmap
-          Topic: /TE2323002/move_base/local_costmap/costmap
+          Topic: /TE2416003/move_base/local_costmap/costmap
           Unreliable: false
           Use Timestamp: false
           Value: true
@@ -311,7 +446,7 @@ Visualization Manager:
           Radius: 0.029999999329447746
           Shaft Diameter: 0.10000000149011612
           Shaft Length: 0.10000000149011612
-          Topic: /TE2323002/move_base/TebLocalPlannerROS/local_plan
+          Topic: /TE2416003/move_base/TebLocalPlannerROS/local_plan
           Unreliable: false
           Value: true
       Enabled: true
@@ -336,15 +471,15 @@ Visualization Manager:
       Radius: 0.029999999329447746
       Shaft Diameter: 0.10000000149011612
       Shaft Length: 0.10000000149011612
-      Topic: /TE2323002/move_base/TebLocalPlannerROS/local_plan
+      Topic: /TE2416003/move_base/TebLocalPlannerROS/local_plan
       Unreliable: false
       Value: true
     - Class: rviz/Marker
       Enabled: true
-      Marker Topic: /TE2323002/visualization_marker
+      Marker Topic: /TE2416003/visualization_marker
       Name: Marker
       Namespaces:
-        {}
+        basic_shapes: true
       Queue Size: 100
       Value: true
     - Angle Tolerance: 0.10000000149011612
@@ -364,7 +499,7 @@ Visualization Manager:
           Scale: 1
           Value: true
         Value: false
-      Enabled: true
+      Enabled: false
       Keep: 100
       Name: Odometry
       Position Tolerance: 0.10000000149011612
@@ -378,9 +513,9 @@ Visualization Manager:
         Shaft Length: 0.30000001192092896
         Shaft Radius: 0.05000000074505806
         Value: Arrow
-      Topic: /TE2321000/odometry/filtered
+      Topic: /TE2416003/odometry/filtered
       Unreliable: false
-      Value: true
+      Value: false
     - Alpha: 1
       Autocompute Intensity Bounds: true
       Autocompute Value Bounds:
@@ -404,14 +539,14 @@ Visualization Manager:
       Size (Pixels): 3
       Size (m): 0.009999999776482582
       Style: Flat Squares
-      Topic: /TE2323002/camera1/depth/color/points
+      Topic: /TE2416003/camera1/depth/color/points
       Unreliable: false
       Use Fixed Frame: true
       Use rainbow: true
       Value: false
     - Class: rviz/Image
       Enabled: true
-      Image Topic: /TE2323002/usb_cam/image_raw
+      Image Topic: /TE2416003/usb_cam/image_raw
       Max Value: 1
       Median window: 5
       Min Value: 0
@@ -421,11 +556,75 @@ Visualization Manager:
       Transport Hint: raw
       Unreliable: false
       Value: true
+    - Alpha: 1
+      Class: rviz/Polygon
+      Color: 25; 255; 0
+      Enabled: true
+      Name: Polygon
+      Topic: /TE2416003/move_base/local_costmap/footprint
+      Unreliable: false
+      Value: true
+    - Alpha: 1
+      Autocompute Intensity Bounds: true
+      Autocompute Value Bounds:
+        Max Value: 10
+        Min Value: -10
+        Value: true
+      Axis: Z
+      Channel Name: intensity
+      Class: rviz/PointCloud2
+      Color: 255; 255; 255
+      Color Transformer: Intensity
+      Decay Time: 0
+      Enabled: true
+      Invert Rainbow: false
+      Max Color: 255; 255; 255
+      Min Color: 0; 0; 0
+      Name: PointCloud2
+      Position Transformer: XYZ
+      Queue Size: 10
+      Selectable: true
+      Size (Pixels): 3
+      Size (m): 0.009999999776482582
+      Style: Flat Squares
+      Topic: /TE2416003/bumper_pointcloud
+      Unreliable: false
+      Use Fixed Frame: true
+      Use rainbow: true
+      Value: true
+    - Alpha: 1
+      Autocompute Intensity Bounds: true
+      Autocompute Value Bounds:
+        Max Value: 10
+        Min Value: -10
+        Value: true
+      Axis: Z
+      Channel Name: intensity
+      Class: rviz/PointCloud2
+      Color: 255; 255; 255
+      Color Transformer: Intensity
+      Decay Time: 0
+      Enabled: true
+      Invert Rainbow: false
+      Max Color: 255; 255; 255
+      Min Color: 0; 0; 0
+      Name: PointCloud2
+      Position Transformer: XYZ
+      Queue Size: 10
+      Selectable: true
+      Size (Pixels): 3
+      Size (m): 0.009999999776482582
+      Style: Flat Squares
+      Topic: /TE2416003/bumper_pointcloud2
+      Unreliable: false
+      Use Fixed Frame: true
+      Use rainbow: true
+      Value: true
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
     Default Light: true
-    Fixed Frame: TE2323002/base_link
+    Fixed Frame: map
     Frame Rate: 60
   Name: root
   Tools:
@@ -435,51 +634,46 @@ Visualization Manager:
     - Class: rviz/Select
     - Class: rviz/SetInitialPose
       Theta std deviation: 0.2617993950843811
-      Topic: /TE2323002/initialpose
+      Topic: /TE2416003/initialpose
       X std deviation: 0.5
       Y std deviation: 0.5
     - Class: rviz/SetGoal
-      Topic: /TE2323002/move_base_simple/goal
+      Topic: /TE2416003/move_base_simple/goal
     - Class: rviz/Measure
     - Class: rviz/PublishPoint
       Single click: true
-      Topic: /TE2323002/clicked_point
+      Topic: /TE2416003/clicked_point
     - Class: rviz_custom/CreateRestrict
       Clear All: false
       Size: 20
   Value: true
   Views:
     Current:
-      Class: rviz/XYOrbit
-      Distance: 7.489124298095703
+      Angle: 3.140000104904175
+      Class: rviz/TopDownOrtho
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
-      Focal Point:
-        X: 2.7462048530578613
-        Y: -0.36487871408462524
-        Z: -8.679035090608522e-7
-      Focal Shape Fixed Size: true
-      Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.6853980422019958
+      Scale: 55.89072799682617
       Target Frame: <Fixed Frame>
-      Value: XYOrbit (rviz)
-      Yaw: 5.23539924621582
+      Value: TopDownOrtho (rviz)
+      X: -3.539163589477539
+      Y: 0.2277456372976303
     Saved: ~
 Window Geometry:
   Displays:
     collapsed: false
   Height: 1025
   Hide Left Dock: false
-  Hide Right Dock: false
+  Hide Right Dock: true
   Image:
     collapsed: false
-  QMainWindow State: 000000ff00000000fd0000000400000000000001ba000003a7fc020000001bfb0000001200530065006c0065006300740069006f006e00000001e10000009b0000005c00fffffffb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb000000100044006900730070006c006100790073010000003d0000020d000000c900fffffffc000002500000012b0000001600fffffffa000000000100000002fb0000000a0049006d0061006700650100000000ffffffff0000005e00fffffffb0000000a0049006d0061006700650100000000000001ba0000000000000000fb0000000a0049006d00610067006500000002ed000000ef0000000000000000fb0000000c00430061006d00650072006100000001510000010d0000000000000000fb0000000c00430061006d0065007200610000000217000001800000000000000000fb0000000c00430061006d00650072006101000001ca000000b20000000000000000fb0000000c00430061006d00650072006101000001ca000000b20000000000000000fb0000000a0049006d00610067006501000002df000000fa0000000000000000fb0000000c00430061006d00650072006101000001ca000000b20000000000000000fb0000000a0049006d00610067006501000001ca000000b20000000000000000fb0000000a0049006d00610067006501000001ca000000b20000000000000000fb0000000a0049006d00610067006501000001ca000000b20000000000000000fb0000000a0049006d0061006700650100000164000001180000000000000000fb0000000a0049006d00610067006501000001ea000000f80000000000000000fb0000000a0049006d00610067006501000002e8000000fc0000000000000000fb0000000a0049006d006100670065010000030c000000ca0000000000000000fb0000000a0049006d0061006700650100000300000000e40000000000000000fb00000024005200760069007a00560069007300750061006c0054006f006f006c00730047007500690100000381000000630000004100fffffffb0000000c00430061006d00650072006101000001a8000001110000000000000000fb0000000c00430061006d00650072006101000002bf0000011f0000000000000000fb0000000a0049006d0061006700650100000319000000cb0000000000000000fb0000000c00430061006d0065007200610000000319000000cb0000000000000000fb0000000a0049006d0061006700650100000319000000cb0000000000000000fb0000000a0049006d0061006700650100000319000000cb00000000000000000000000100000100000003a7fc0200000004fb0000001e0054006f006f006c002000500072006f0070006500720074006900650073010000003d000001880000005c00fffffffb0000000a0056006900650077007301000001cb00000219000000a400fffffffb0000001e0054006f006f006c002000500072006f007000650072007400690065007301000001e3000001f30000000000000000fb0000001200530065006c0065006300740069006f006e010000025a000000b200000000000000000000000200000490000000a9fc0100000001fb0000000a00560069006500770073030000004e00000080000002e10000019700000003000006790000003efc0100000002fb0000000800540069006d0065000000000000000679000004f300fffffffb0000000800540069006d0065010000000000000450000000000000000000000477000003a700000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
+  QMainWindow State: 000000ff00000000fd0000000400000000000001ba000003a7fc020000001bfb0000001200530065006c0065006300740069006f006e00000001e10000009b0000005c00fffffffb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb000000100044006900730070006c006100790073010000003d00000250000000c900fffffffc00000293000001510000001600fffffffa000000000100000002fb0000000a0049006d0061006700650100000000ffffffff0000005e00fffffffb0000000a0049006d0061006700650100000000000001ba0000000000000000fb0000000a0049006d00610067006500000002ed000000ef0000000000000000fb0000000c00430061006d00650072006100000001510000010d0000000000000000fb0000000c00430061006d0065007200610000000217000001800000000000000000fb0000000c00430061006d00650072006101000001ca000000b20000000000000000fb0000000c00430061006d00650072006101000001ca000000b20000000000000000fb0000000a0049006d00610067006501000002df000000fa0000000000000000fb0000000c00430061006d00650072006101000001ca000000b20000000000000000fb0000000a0049006d00610067006501000001ca000000b20000000000000000fb0000000a0049006d00610067006501000001ca000000b20000000000000000fb0000000a0049006d00610067006501000001ca000000b20000000000000000fb0000000a0049006d0061006700650100000164000001180000000000000000fb0000000a0049006d00610067006501000001ea000000f80000000000000000fb0000000a0049006d00610067006501000002e8000000fc0000000000000000fb0000000a0049006d006100670065010000030c000000ca0000000000000000fb0000000a0049006d0061006700650100000300000000e40000000000000000fb00000024005200760069007a00560069007300750061006c0054006f006f006c00730047007500690000000381000000630000004100fffffffb0000000c00430061006d00650072006101000001a8000001110000000000000000fb0000000c00430061006d00650072006101000002bf0000011f0000000000000000fb0000000a0049006d0061006700650100000319000000cb0000000000000000fb0000000c00430061006d0065007200610000000319000000cb0000000000000000fb0000000a0049006d0061006700650100000319000000cb0000000000000000fb0000000a0049006d0061006700650100000319000000cb00000000000000000000000100000100000003a7fc0200000004fb0000001e0054006f006f006c002000500072006f0070006500720074006900650073000000003d000001880000005c00fffffffb0000000a0056006900650077007300000001cb00000219000000a400fffffffb0000001e0054006f006f006c002000500072006f007000650072007400690065007301000001e3000001f30000000000000000fb0000001200530065006c0065006300740069006f006e010000025a000000b200000000000000000000000200000490000000a9fc0100000001fb0000000a00560069006500770073030000004e00000080000002e10000019700000003000006790000003efc0100000002fb0000000800540069006d0065000000000000000679000004f300fffffffb0000000800540069006d006501000000000000045000000000000000000000057d000003a700000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
   RvizVisualToolsGui:
     collapsed: false
   Selection:
@@ -487,9 +681,9 @@ Window Geometry:
   Time:
     collapsed: false
   Tool Properties:
-    collapsed: false
+    collapsed: true
   Views:
-    collapsed: false
+    collapsed: true
   Width: 1853
   X: 67
   Y: 27

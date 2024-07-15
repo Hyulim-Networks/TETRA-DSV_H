@@ -3737,7 +3737,7 @@ bool ChargingStation_tracking(bool bOn, int marker_id)
             m_fdistance = sqrt(_pAR_tag_pose.m_transform_pose_x * _pAR_tag_pose.m_transform_pose_x + _pAR_tag_pose.m_transform_pose_y * _pAR_tag_pose.m_transform_pose_y);
             //printf("master_distance: %.5f \n", m_fdistance);
             //if(m_fdistance > 0.9 && m_fdistance < 2.0)
-            if(m_fdistance > 0.65 && m_fdistance < 2.0)
+            if(m_fdistance > 0.47 && m_fdistance < 2.0)
             {
                 cmd->linear.x = 1.0 * (m_fdistance /1.2) * 0.1; // 0.15 
                 //printf("linear velocity: %.2f \n", cmd->linear.x);
@@ -3814,7 +3814,7 @@ bool ChargingStation_Yaw_tracking()
     float m_fdistance = 0.0;
     m_fdistance = sqrt(_pAR_tag_pose.m_transform_pose_x * _pAR_tag_pose.m_transform_pose_x + _pAR_tag_pose.m_transform_pose_y * _pAR_tag_pose.m_transform_pose_y);
 
-    if(_pAR_tag_pose.m_target_yaw <= 0.00872665 && _pAR_tag_pose.m_target_yaw >= -0.00872665) //+- 0.5deg
+    if(_pAR_tag_pose.m_target_yaw <= 0.0174533/2 && _pAR_tag_pose.m_target_yaw >= -0.0174533/2) //+- 0.5deg
     {
         ex_iDocking_CommandMode = 4;
         bResult = true;
@@ -3825,31 +3825,33 @@ bool ChargingStation_Yaw_tracking()
     {
         printf("++dir \n");
         
-        while(m_iyaw_cnt < 20) // 20
+        while(m_iyaw_cnt < 30) // 20
         {
             if(_pFlag_Value.m_bFlag_MergeScan_Left)
             {
                 cmd->angular.z = 0.0;
                 cmd->linear.x = 0.0;
                 cmdpub_.publish(cmd);
+                m_iyaw_cnt++;
             }
             else
             {
                 cmd->linear.x = 0.0;
-                cmd->angular.z = -1.0 * _pAR_tag_pose.m_target_yaw * 0.9; // 1.6
+                cmd->angular.z = -1.0 * _pAR_tag_pose.m_target_yaw * 1.2; // 1.6
                 cmdpub_.publish(cmd);
                 m_iyaw_cnt++;
             }
             usleep(100000); //100ms
         }
 
-        while(m_iback_cnt < 10) // 30
+        while(m_iback_cnt < 25) // 30
         {
             if(_pFlag_Value.m_bFlag_MergeScan_Rear)
             {
                 cmd->angular.z = 0.0;
                 cmd->linear.x = 0.0;
                 cmdpub_.publish(cmd);
+                m_iback_cnt++;
             }
             else
             {
@@ -3873,31 +3875,33 @@ bool ChargingStation_Yaw_tracking()
     {
         printf("--dir \n");
         
-        while(m_iyaw_cnt < 20) // 20
+        while(m_iyaw_cnt < 30) // 20
         {
             if(_pFlag_Value.m_bFlag_MergeScan_Right)
             {
                 cmd->angular.z = 0.0;
                 cmd->linear.x = 0.0;
                 cmdpub_.publish(cmd);
+                m_iyaw_cnt++;
             }
             else
             {
                 cmd->linear.x = 0.0;
-                cmd->angular.z = -1.0 * _pAR_tag_pose.m_target_yaw * 0.9; // 1.6
+                cmd->angular.z = -1.0 * _pAR_tag_pose.m_target_yaw * 1.2; // 1.6
                 cmdpub_.publish(cmd);
                 m_iyaw_cnt++;
             }
             usleep(100000); //100ms
         }
 
-        while(m_iback_cnt < 10) // 30
+        while(m_iback_cnt < 25) // 30
         {
             if(_pFlag_Value.m_bFlag_MergeScan_Rear)
             {
                 cmd->angular.z = 0.0;
                 cmd->linear.x = 0.0;
                 cmdpub_.publish(cmd);
+                m_iback_cnt++;
             }
             else
             {

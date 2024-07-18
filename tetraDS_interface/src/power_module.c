@@ -1220,7 +1220,7 @@ int power_read_conveyor_sensor(int fd,  int *Input)
 	ret = get_response(fd, packet_buf);
 
 
-	int iInput = (packet_buf[4] & 0xff) | ((packet_buf[3] << 8) & 0xff00);
+	int iInput = (packet_buf[4] & 0xff);
 	*Input = iInput;
 
 	return ret;

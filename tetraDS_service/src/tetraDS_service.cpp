@@ -4988,6 +4988,11 @@ void *DockingThread_function(void *data)
             /****************************************************************/
             // Lift Docking Loop ... Need to change lift station marker size = 20 (set_marker20_cmd)
             case 11:
+                if(_pAR_tag_pose.m_iSelect_AR_tag_id==9)
+                {
+                    Docking_EXIT();
+                    ex_iDocking_CommandMode = 0;
+                }
                 set_armarker20();
                 printf("!! Lift_Thread_function_1 !! \n");
                 LiftMovement1(lift_cmd_client);
@@ -5062,6 +5067,11 @@ void *DockingThread_function(void *data)
                 break;
             /****************************************************************/
             case 21:
+                if(_pAR_tag_pose.m_iSelect_AR_tag_id==9)
+                {
+                    Docking_EXIT();
+                    ex_iDocking_CommandMode = 0;
+                }
                 set_armarker20();
                 printf("!! Lift_Thread_function_2 !! \n");
                 LiftMovement2(lift_cmd_client);

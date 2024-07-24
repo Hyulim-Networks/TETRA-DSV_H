@@ -6,6 +6,12 @@ git reset --hard
 git pull origin main
 sudo chmod +x ~/catkin_ws/src/timed_roslaunch/scripts/timed_roslaunch.sh
 
+rm -rf ~/catkin_ws/build
+rm -rf ~/catkin_ws/devel
+rm -rf ~/catkin_ws/.catkin_workspace
+cd ~/catkin_ws
+catkin_make
+
 rm ~/update.sh
 ln ~/catkin_ws/src/sh_files/update.sh ~/update.sh
 sudo chmod +x ~/update.sh

@@ -2719,6 +2719,7 @@ void Reset_EKF_SetPose()
     
 	SetPose_cmd_client.call(setpose_srv); //Set_pose call//
 	printf("##Set_Pose(EKF)! \n");
+    usleep(200000);
 
     initPose_.header.stamp = ros::Time(0); //ros::Time::now(); 
     initPose_.header.frame_id = "map";
@@ -4919,7 +4920,7 @@ void *DockingThread_function(void *data)
                 docking_progress_pub.publish(docking_progress);
                 break;
             case 2:
-                ChargingStation_tracking(true, _pRobot_Status.HOME_ID);
+                ChargingStation_tracking(true, _pAR_tag_pose.m_iSelect_AR_tag_id);
                 printf(" ---------------------------------------- \n");
                 if(_pFlag_Value.m_bfalg_DockingExit)
                 {
@@ -4942,7 +4943,7 @@ void *DockingThread_function(void *data)
                 docking_progress_pub.publish(docking_progress);
                 break;
             case 4:
-                ChargingStation_tracking2(_pRobot_Status.HOME_ID);
+                ChargingStation_tracking2(_pAR_tag_pose.m_iSelect_AR_tag_id);
                 if(_pFlag_Value.m_bfalg_DockingExit)
                 {
                     Docking_EXIT();

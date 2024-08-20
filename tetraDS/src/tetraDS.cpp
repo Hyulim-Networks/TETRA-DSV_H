@@ -463,7 +463,6 @@ void SetMoveCommand(double fLinear_vel, double fAngular_vel)
 	int iData2 = 1000.0 * RPM_to_ms(Right_Wheel_vel);
 	dssp_rs232_drv_module_set_velocity(iData1, iData2);
 }
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 //Main Loop//
 int main(int argc, char * argv[])
@@ -476,20 +475,20 @@ int main(int argc, char * argv[])
 	ros::NodeHandle nbumper;
 	ros::NodeHandle nemg;
 	ros::NodeHandle param;
-    	ros::Publisher tetra_battery_publisher;
+	ros::Publisher tetra_battery_publisher;
 	has_prefix=ros::param::get("tf_prefix", tf_prefix_); //tf_prefix add - 210701
 
 	//Read Conveyor Option Param Read//
-    	n.getParam("ekf_option", m_bEKF_option);
-    	printf("##ekf_option: %d \n", m_bEKF_option);
+	n.getParam("ekf_option", m_bEKF_option);
+	printf("##ekf_option: %d \n", m_bEKF_option);
 
-    	TETRA tetra;
-    	//cmd_velocity_velue//
+	TETRA tetra;
+	//cmd_velocity_velue//
 	ros::Subscriber vel_sub = n.subscribe("cmd_vel",100,tetra.velCallback);
 	//acceleration_velue//
 	ros::Subscriber acc_sub = n.subscribe("accel_vel",10,accelCallback);
 	//Joystick//
-    	ros::Subscriber joy_sub = njoy.subscribe<sensor_msgs::Joy>("joy", 10, joyCallback);
+	ros::Subscriber joy_sub = njoy.subscribe<sensor_msgs::Joy>("joy", 10, joyCallback);
 	ros::Subscriber vjoy_sub = vjoy.subscribe<geometry_msgs::Twist>("virtual_joystick/cmd_vel", 10, vjoyCallback);
 	//Pose Reset//_test
 	ros::Subscriber PoseReset = nReset.subscribe<std_msgs::Int32>("PoseRest",10, PoseResetCallback);
@@ -521,7 +520,7 @@ int main(int argc, char * argv[])
 	linear_position_move_service = param.advertiseService("linear_move_cmd", Linear_Move_Command);
 	angular_position_move_service = param.advertiseService("angular_move_cmd", Angular_Move_Command);
 
-    	ros::Rate loop_rate(30.0); //default: 30HZ
+    ros::Rate loop_rate(30.0); //default: 30HZ
 
 	sprintf(port, "/dev/ttyS0");
 	//RS232 Connect
@@ -550,9 +549,8 @@ int main(int argc, char * argv[])
 	//Reset odometry
 	dssp_rs232_drv_module_reset_odometry();
 	usleep(10000);
-	//bumper flag ... add by mwcha 230629
+	//bumper flag 
 	bool m_bflag_bumper = false;
-	//
 	printf("□■■■■■■■□■■■■■■□□■■■■■■■□■■■■■■□□□□□□■□□□□\n");
 	printf("□□□□■□□□□■□□□□□□□□□□■□□□□■□□□□□■□□□□□■□□□□\n");
 	printf("□□□□■□□□□■□□□□□□□□□□■□□□□■□□□□□■□□□□■□■□□□\n");
@@ -561,14 +559,14 @@ int main(int argc, char * argv[])
 	printf("□□□□■□□□□■□□□□□□□□□□■□□□□■□□□□□■□□■□□□□□■□\n");
 	printf("□□□□■□□□□■■■■■■□□□□□■□□□□■□□□□□■□□■□□□□□■□\n");
 
-        while(ros::ok())
+	while(ros::ok())
 	{
         	ros::spinOnce();
 		
 		input_linear  = linear;
 		input_angular = angular;
 
-		//smoother velocity Loop//////////////////////////////////////////////////
+		//smoother velocity Loop
 		//linear_velocity
 		if(linear > 0)
 			m_bForwardCheck = true;
@@ -615,7 +613,6 @@ int main(int argc, char * argv[])
 				control_linear = input_linear;
 			}
 		}
-		//////////////////////////////////////////////////////////////////////////
 		
 		//control_linear = input_linear;
 		control_angular = input_angular;
@@ -651,32 +648,11 @@ int main(int argc, char * argv[])
 		{
 			printf("[Motor Driver Error] Left Error Code: %d \n", m_left_error_code);
 			printf("[Motor Driver Error] Right Error Code: %d \n", m_right_error_code);
-			// dssp_rs232_drv_module_set_drive_err_reset();
 			usleep(1000);
-			dssp_rs232_drv_module_set_servo(1); //Servo On
+			dssp_rs232_drv_module_set_servo(0); //Servo On
 		}
-/*
-		if(m_emg_state)
-		{
-			if(m_bflag_emg)
-			{
-				dssp_rs232_drv_module_set_servo(0); //Servo Off
-				usleep(1000);
-				dssp_rs232_drv_module_set_drive_err_reset();
-				usleep(1000);
-				m_bflag_emg = false;
-			}
-		}
-		else
-		{
-			if(!m_bflag_emg)
-			{
-				dssp_rs232_drv_module_set_servo(1); //Servo On
-				m_bflag_emg = true;
-			}
-		}
-*/
-		if(m_bumper_data == 2 || m_bumper_data == 3) //Switch and Bumper Loop ... 230629 add by mwcha
+
+		if(m_bumper_data == 2 || m_bumper_data == 3) 
 		{
 			if(m_bflag_bumper)
 			{

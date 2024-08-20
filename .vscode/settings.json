@@ -4,7 +4,8 @@
         "deque": "cpp",
         "list": "cpp",
         "vector": "cpp",
-        "xstring": "cpp"
+        "xstring": "cpp",
+        "istream": "cpp"
     },
     "cmake.sourceDirectory": "C:/Users/dkswn/IdeaProjects/TETRA-DSV_H/Joy_tetra"
 }

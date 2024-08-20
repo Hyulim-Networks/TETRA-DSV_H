@@ -283,7 +283,7 @@ typedef struct FALG_VALUE
     bool m_bfalg_DockingExit = false;
     bool m_bflag_Conveyor_docking = false;
     bool m_bflag_Lift_docking = false;
-    bool m_Onetime_reset_flag = false;
+    int m_Onetime_reset_cnt = 0;
     //bool m_bFlag_Obstacle_Center = false;
     bool m_bFlag_Obstacle_Left = false;
     bool m_bFlag_Obstacle_Left_b = false;   
@@ -3010,18 +3010,34 @@ bool Set2D_Pose_Estimate_Command(tetraDS_service::pose_estimate::Request  &req,
     return true;
 }
 
+void reCharging()
+{
+    _pFlag_Value.m_Onetime_reset_cnt = 0;
+    geometry_msgs::TwistPtr cmd(new geometry_msgs::Twist());
+    ROS_INFO("reCharging...");
+    cmd->linear.x = 0.1;
+    cmd->angular.z = 0.0;
+    cmdpub_.publish(cmd);
+    sleep(2);
+    cmd->linear.x = -0.1;
+    cmd->angular.z = 0.0;
+    cmdpub_.publish(cmd);
+    sleep(2);
+    cmd->linear.x = 0.0;
+    cmd->angular.z = 0.0;
+    cmdpub_.publish(cmd);
+}
+
 void ChargingCallback(const std_msgs::Int32::ConstPtr& msg)
 {
     _pRobot_Status.m_iCallback_Charging_status = msg->data; //docking_status
     
-    if(_pRobot_Status.m_iCallback_Charging_status > 1 && _pFlag_Value.m_Onetime_reset_flag == false )
+    if(_pRobot_Status.m_iCallback_Charging_status == 7)
     {
-        _pFlag_Value.m_Onetime_reset_flag = true;
-    }
-    
-    if(_pRobot_Status.m_iCallback_Charging_status <= 1)
-    {
-        _pFlag_Value.m_Onetime_reset_flag = false;
+        _pFlag_Value.m_Onetime_reset_cnt++;
+        if(_pFlag_Value.m_Onetime_reset_cnt > 100) reCharging();
+    }else{
+        _pFlag_Value.m_Onetime_reset_cnt = 0;
     }
 }
 

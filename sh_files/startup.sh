@@ -10,6 +10,16 @@ while ! ip route get 1.1.1.1 | grep -oP 'src \K\S+'; do
  sleep 1
 done
 
+while ! ping -c1 192.168.0.2 >/dev/null; do
+ echo "wait for lidar1 up try in 1 second";
+ sleep 1
+done
+
+while ! ping -c1 192.168.0.3 >/dev/null; do
+ echo "wait for lidar2 up try in 1 second";
+ sleep 1
+done
+
 export ROS_IP=$(ip route get 1.1.1.1 | grep -oP 'src \K\S+')
 export ROS_MASTER_URI=http://$ROS_IP:11311
 export ROS_NAMESPACE=TETRA_NS

@@ -67,7 +67,7 @@ add_service_files(
   unliftingcheck.srv  
   patrol_lift.srv
   gotolift.srv
-  setweightopstacle.srv
+  setweightobstacle.srv
 )
 
 generate_messages(   

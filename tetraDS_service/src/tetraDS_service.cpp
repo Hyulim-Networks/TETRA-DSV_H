@@ -6665,7 +6665,7 @@ int main (int argc, char** argv)
                 if(bCheck_waitForTransform)
                 {
                     m_iList_Count = virtual_obstacle.list.size();
-                    if(m_iList_Count > 0)
+                    if(m_iList_Count > 0 || m_bFlag_virtualWallCheck)
                     {
                         if(m_bFlag_nomotion_call || !_pFlag_Value.m_bFlag_nomotion || m_flag_Dynamic_reconfigure_call || m_flag_setgoal || _pFlag_Value.m_bTebMarker_reconfigure_flag)
                         {
@@ -6673,16 +6673,14 @@ int main (int argc, char** argv)
                             continue;
                         }
 
-                        //message copy...
                         virtual_obstacle2.list.clear();
                         virtual_obstacle2.list.resize(m_iList_Count);
                         m_iList_Count2 = virtual_obstacle2.list.size();
-                        if(m_iList_Count2 > 0)
+                        if(m_iList_Count2 >= 0)
                         {
                             for(int i=0; i<m_iList_Count2; i++)
                             {
                                 m_iMode_Count = virtual_obstacle.list[i].form.size();
-                                //virtual_obstacle2.list[i].form.clear();
                                 virtual_obstacle2.list[i].form.resize(m_iMode_Count);
                                 m_iMode_Count2 = virtual_obstacle2.list[i].form.size();
                                 if(m_iMode_Count2 > 0)
@@ -6695,33 +6693,25 @@ int main (int argc, char** argv)
                                     }
                                 }
                             }
-
                             if(m_bFlag_nomotion_call || !_pFlag_Value.m_bFlag_nomotion || m_flag_Dynamic_reconfigure_call || m_flag_setgoal || _pFlag_Value.m_bTebMarker_reconfigure_flag)
                             {
                                 loop_rate.sleep();
                                 continue;
                             }
                             virtual_obstacle2_pub.publish(virtual_obstacle2);
-                            //231117 mwcha
-                            if(m_iList_Count2 == 0)
-                            {
-                                m_bFlag_virtualWallCheck = false;
-                            }
                         }
-
+                        if(m_iList_Count2 == 0){
+                            m_bFlag_virtualWallCheck = false;
+                        }
                     }
                 }
                 else
                 {
                     printf("[Error]listener2.waitForTransform Fail & lookupTransform Fail!! \n");
                 }
-                ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
             }
         }
-
         loop_rate.sleep();
     }
-
     return 0;
 }

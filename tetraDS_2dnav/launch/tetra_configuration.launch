@@ -30,7 +30,7 @@
       <remap from="scan" to="scan"/> <!--add H model mwcha-->
       <param name="min_ang" type="double" value="-2.35619" /> <!--135deg-->
       <param name="max_ang" type="double" value="2.35619" />  <!--135deg-->
-      <param name="intensity" type="bool" value="True" />
+      <param name="intensity" type="bool" value="false" />
       <param name="skip" type="int" value="0" />
       <param name="frame_id" type="str" value="$(optenv ROS_NAMESPACE)/laser" />
       <param name="time_offset" type="double" value="-0.001" />
@@ -49,7 +49,7 @@
       <remap from="scan" to="scan_b"/> <!--add H model mwcha-->
       <param name="min_ang" type="double" value="-2.35619" /> <!--135deg-->
       <param name="max_ang" type="double" value="2.35619" />  <!--135deg-->
-      <param name="intensity" type="bool" value="True" />
+      <param name="intensity" type="bool" value="false" />
       <param name="skip" type="int" value="0" />
       <param name="frame_id" type="str" value="$(optenv ROS_NAMESPACE)/laser_link2" />
       <param name="time_offset" type="double" value="-0.001" />
@@ -78,18 +78,19 @@
 <!-- TETRA service -->
  <node pkg="tetraDS_service" type="tetraDS_service" name="tetraDS_service" output="screen" />
 
-<!--USB_cam & AR_tag Detection(rear) -->
-    <node name="usb_cam" pkg="usb_cam" type="usb_cam_node" respawn="true" output="screen" >
-    	<param name="video_device" value="/dev/cam_rear" />
-    	<param name="image_width" value="640" /> 
-    	<param name="image_height" value="480" /> 
-    	<param name="pixel_format" value="mjpeg" />
-    	<param name="camera_frame_id" value="$(optenv ROS_NAMESPACE)/usb_cam" />
-    	<param name="io_method" value="mmap"/>
-    	<param name="auto_white_balance" value="true"/>
-    	<param name="autoexposure" value="true"/>
-    	<param name="camera_info_url" value="file:///home/tetra/.ros/camera_info/camera.yaml"/>
-    </node>
+<!--USB_cam & AR_tag Detection(rear) 
+  <node name="usb_cam" pkg="usb_cam" type="usb_cam_node" respawn="true" output="screen" >
+    <param name="video_device" value="/dev/cam_rear" />
+    <param name="image_width" value="640" /> 
+    <param name="image_height" value="480" /> 
+    <param name="pixel_format" value="mjpeg" />
+    <param name="camera_frame_id" value="$(optenv ROS_NAMESPACE)/usb_cam" />
+    <param name="io_method" value="mmap"/>
+    <param name="auto_white_balance" value="true"/>
+    <param name="autoexposure" value="true"/>
+    <param name="camera_info_url" value="file:///home/tetra/.ros/camera_info/camera.yaml"/>
+  </node>
+-->
 <!--
     <arg name="marker_size"          default="10.0" /> 
     <arg name="max_new_marker_error" default="0.05" />
@@ -124,6 +125,5 @@
   
 <!-- web_video_server -->
 <node pkg="web_video_server" type="web_video_server" name="web_video_server" output="screen" />
-
 
 </launch>

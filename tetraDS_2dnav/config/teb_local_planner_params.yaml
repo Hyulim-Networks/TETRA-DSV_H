@@ -34,7 +34,7 @@ TebLocalPlannerROS:
  cmd_angle_instead_rotvel: false
  footprint_model:
    type: "circular"
-   radius: 0.6135
+   radius: 0.395
 
     
  # GoalTolerance

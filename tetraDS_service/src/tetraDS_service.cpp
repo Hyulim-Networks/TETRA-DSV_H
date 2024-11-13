@@ -3257,126 +3257,6 @@ void AR_tagCallback(ar_track_alvar_msgs::AlvarMarkers req)
     }  
 }
 
-void resultCallback(const move_base_msgs::MoveBaseActionResult::ConstPtr& msgResult)
-{
-   uint8_t PENDING    = 0;   // The goal has yet to be processed by the action server
-   uint8_t ACTIVE     = 1;   // The goal is currently being processed by the action server
-   uint8_t PREEMPTED  = 2;   // The goal received a cancel request after it started executing
-                             //   and has since completed its execution (Terminal State)
-   uint8_t SUCCEEDED  = 3;   // The goal was achieved successfully by the action server (Terminal State)
-   uint8_t ABORTED    = 4;   // The goal was aborted during execution by the action server due
-                             //    to some failure (Terminal State)
-   uint8_t REJECTED   = 5;   // The goal was rejected by the action server without being processed,
-                             //    because the goal was unattainable or invalid (Terminal State)
-   uint8_t PREEMPTING = 6;   // The goal received a cancel request after it started executing
-                             //    and has not yet completed execution
-   uint8_t RECALLING  = 7;   // The goal received a cancel request before it started executing,
-                             //    but the action server has not yet confirmed that the goal is canceled
-   uint8_t RECALLED   = 8;   // The goal received a cancel request before it started executing
-                             //    and was successfully cancelled (Terminal State)
-   uint8_t LOST       = 9;   // An action client can determine that a goal is LOST. This should not be
-                             //    sent over the wire by an action server
-   time_t curr_time;
-   struct tm *curr_tm;
-   curr_time = time(NULL);
-   curr_tm = localtime(&curr_time);
-
-  if(msgResult->status.status == SUCCEEDED)
-  { 
-    ROS_INFO("[SUCCEEDED]resultCallback: %d ",msgResult->status.status);
-    _pFlag_Value.m_bflag_NextStep = true;
-    _pRobot_Status.m_iMovebase_Result = 3;
-    m_iRetry_cnt = 0;
-    //LED_Turn_On(4);
-    LED_Control(1, 100);
-    usleep(100000); 
-    LED_Control(2, 100);
-    //costmap clear call//
-    //clear_costmap_client.call(m_request);
-
-    if(_pFlag_Value.m_bflag_ComebackHome) //Home Postion -> docking mode start
-    {
-        _pAR_tag_pose.m_iSelect_AR_tag_id = _pRobot_Status.HOME_ID; //0;
-        ex_iDocking_CommandMode = 1;
-        _pFlag_Value.m_bflag_ComebackHome = false;
-    } 
-
-    // if(_pFlag_Value.m_bflag_Conveyor_docking) //Conveyor Postion -> docking mode start
-    // {
-    //     _pAR_tag_pose.m_iSelect_AR_tag_id = _pRobot_Status.CONVEYOR_ID;
-    //     ex_iDocking_CommandMode = 11;
-    //     _pFlag_Value.m_bflag_Conveyor_docking = false;
-    // }
-
-    if(_pFlag_Value.m_bflag_Lift_docking) //Lift Postion -> docking mode start ... 231123 mwcha
-    {
-        _pAR_tag_pose.m_iSelect_AR_tag_id = _pRobot_Status.LIFT_ID;
-        ex_iDocking_CommandMode = 11;
-        _pFlag_Value.m_bflag_Lift_docking = false;
-    }
-
-    m_flag_PREEMPTED = false;
-    _pFlag_Value.m_bFlag_pub = false;
-
-  }
-  else if( msgResult->status.status == ABORTED)
-  {
-    LED_Toggle_Control(1, 10,100,10,1);
-    LED_Turn_On(18);
-    printf("[ERROR]resultCallback _ RED LED On \n");
-    _pFlag_Value.m_bflag_NextStep = false;
-    ROS_INFO("[ERROR]resultCallback: %d ",msgResult->status.status);
-
-    m_flag_setgoal = true;
-
-    goto_goal_id.id = "";
-    ROS_INFO("Goto Cancel call");
-    GotoCancel_pub.publish(goto_goal_id);
-    _pFlag_Value.m_bFlag_pub = false;
-
-    if(m_iRetry_cnt >= MAX_RETRY_CNT)
-    {
-        m_iRetry_cnt = 0;
-        ROS_INFO("[RETRY Behavior]: FAIL (%d)! \n", m_iRetry_cnt);
-    }
-    else
-    {
-        //costmap clear call//
-        clear_costmap_client.call(m_request);
-
-        LED_Toggle_Control(1, 3,100,3,1);
-        if(_pFlag_Value.m_bflag_Conveyor_docking || _pFlag_Value.m_bflag_Lift_docking) // update by mwcha 231123
-            LED_Turn_On(45); //sky_blue
-        else
-            LED_Turn_On(63);
-
-        ROS_INFO("[RETRY Behavior]: goto_ %s", goal.goal_id.id.c_str());
-        setGoal(goal);
-        m_iRetry_cnt++;
-    }
-
-    m_flag_setgoal = false;
-    m_flag_PREEMPTED = false;
-
-
-  }
-  else if(msgResult->status.status == PREEMPTED) //bumper On Check...
-  {
-    // if(_pFlag_Value.BUMPER_BT)
-    //     ex_iDocking_CommandMode = 100;
-    m_flag_PREEMPTED = true;
-    
-  }
-  else
-  {
-    _pFlag_Value.m_bflag_NextStep = false;
-    ROS_INFO("resultCallback: %d ",msgResult->status.status);
-    _pRobot_Status.m_iMovebase_Result = msgResult->status.status;
-    //costmap clear call//
-    //clear_costmap_client.call(m_request);
-  }
-
-}
 
 // add Move_base Die Check
 bool checkNode(std::string& node_name)
@@ -3760,7 +3640,7 @@ bool ChargingStation_tracking(bool bOn, int marker_id)
             m_fdistance = sqrt(_pAR_tag_pose.m_transform_pose_x * _pAR_tag_pose.m_transform_pose_x + _pAR_tag_pose.m_transform_pose_y * _pAR_tag_pose.m_transform_pose_y);
             //printf("master_distance: %.5f \n", m_fdistance);
             //if(m_fdistance > 0.9 && m_fdistance < 2.0)
-            if(m_fdistance > 0.47 && m_fdistance < 2.0)
+            if(m_fdistance > 0.55 && m_fdistance < 2.0)
             {
                 cmd->linear.x = 1.0 * (m_fdistance /1.2) * 0.1; // 0.15 
                 //printf("linear velocity: %.2f \n", cmd->linear.x);
@@ -6178,6 +6058,139 @@ bool Set_Weight_obstacle_Command(tetraDS_service::setweightobstacle::Request &re
     bResult = true;
     res.command_Result = bResult;
     return true;
+}
+
+void resultCallback(const move_base_msgs::MoveBaseActionResult::ConstPtr& msgResult)
+{
+   uint8_t PENDING    = 0;   // The goal has yet to be processed by the action server
+   uint8_t ACTIVE     = 1;   // The goal is currently being processed by the action server
+   uint8_t PREEMPTED  = 2;   // The goal received a cancel request after it started executing
+                             //   and has since completed its execution (Terminal State)
+   uint8_t SUCCEEDED  = 3;   // The goal was achieved successfully by the action server (Terminal State)
+   uint8_t ABORTED    = 4;   // The goal was aborted during execution by the action server due
+                             //    to some failure (Terminal State)
+   uint8_t REJECTED   = 5;   // The goal was rejected by the action server without being processed,
+                             //    because the goal was unattainable or invalid (Terminal State)
+   uint8_t PREEMPTING = 6;   // The goal received a cancel request after it started executing
+                             //    and has not yet completed execution
+   uint8_t RECALLING  = 7;   // The goal received a cancel request before it started executing,
+                             //    but the action server has not yet confirmed that the goal is canceled
+   uint8_t RECALLED   = 8;   // The goal received a cancel request before it started executing
+                             //    and was successfully cancelled (Terminal State)
+   uint8_t LOST       = 9;   // An action client can determine that a goal is LOST. This should not be
+                             //    sent over the wire by an action server
+   time_t curr_time;
+   struct tm *curr_tm;
+   curr_time = time(NULL);
+   curr_tm = localtime(&curr_time);
+
+  if(msgResult->status.status == SUCCEEDED)
+  { 
+    ROS_INFO("[SUCCEEDED]resultCallback: %d ",msgResult->status.status);
+    _pFlag_Value.m_bflag_NextStep = true;
+    _pRobot_Status.m_iMovebase_Result = 3;
+    m_iRetry_cnt = 0;
+    //LED_Turn_On(4);
+    LED_Control(1, 100);
+    usleep(100000); 
+    LED_Control(2, 100);
+    //costmap clear call//
+    //clear_costmap_client.call(m_request);
+
+    if(_pFlag_Value.m_bflag_ComebackHome) //Home Postion -> docking mode start
+    {
+        _pAR_tag_pose.m_iSelect_AR_tag_id = _pRobot_Status.HOME_ID; //0;
+        ex_iDocking_CommandMode = 1;
+        _pFlag_Value.m_bflag_ComebackHome = false;
+    } 
+
+    // if(_pFlag_Value.m_bflag_Conveyor_docking) //Conveyor Postion -> docking mode start
+    // {
+    //     _pAR_tag_pose.m_iSelect_AR_tag_id = _pRobot_Status.CONVEYOR_ID;
+    //     ex_iDocking_CommandMode = 11;
+    //     _pFlag_Value.m_bflag_Conveyor_docking = false;
+    // }
+
+    if(_pFlag_Value.m_bflag_Lift_docking) //Lift Postion -> docking mode start ... 231123 mwcha
+    {
+        _pAR_tag_pose.m_iSelect_AR_tag_id = _pRobot_Status.LIFT_ID;
+        ex_iDocking_CommandMode = 11;
+        _pFlag_Value.m_bflag_Lift_docking = false;
+    }
+
+    m_flag_PREEMPTED = false;
+    _pFlag_Value.m_bFlag_pub = false;
+
+    //position
+	_pReset_srv.init_position_x = _pTF_pose.poseTFx;
+	_pReset_srv.init_position_y = _pTF_pose.poseTFy;
+	_pReset_srv.init_position_z = _pTF_pose.poseTFz;
+	//orientation
+	_pReset_srv.init_orientation_x = _pTF_pose.poseTFqx;
+	_pReset_srv.init_orientation_y = _pTF_pose.poseTFqy;
+	_pReset_srv.init_orientation_z = _pTF_pose.poseTFqz;
+	_pReset_srv.init_orientation_w = _pTF_pose.poseTFqw;
+    // reset pose
+    Reset_Call_service();
+
+  }
+  else if( msgResult->status.status == ABORTED)
+  {
+    LED_Toggle_Control(1, 10,100,10,1);
+    LED_Turn_On(18);
+    printf("[ERROR]resultCallback _ RED LED On \n");
+    _pFlag_Value.m_bflag_NextStep = false;
+    ROS_INFO("[ERROR]resultCallback: %d ",msgResult->status.status);
+
+    m_flag_setgoal = true;
+
+    goto_goal_id.id = "";
+    ROS_INFO("Goto Cancel call");
+    GotoCancel_pub.publish(goto_goal_id);
+    _pFlag_Value.m_bFlag_pub = false;
+
+    if(m_iRetry_cnt >= MAX_RETRY_CNT)
+    {
+        m_iRetry_cnt = 0;
+        ROS_INFO("[RETRY Behavior]: FAIL (%d)! \n", m_iRetry_cnt);
+    }
+    else
+    {
+        //costmap clear call//
+        clear_costmap_client.call(m_request);
+
+        LED_Toggle_Control(1, 3,100,3,1);
+        if(_pFlag_Value.m_bflag_Conveyor_docking || _pFlag_Value.m_bflag_Lift_docking) // update by mwcha 231123
+            LED_Turn_On(45); //sky_blue
+        else
+            LED_Turn_On(63);
+
+        ROS_INFO("[RETRY Behavior]: goto_ %s", goal.goal_id.id.c_str());
+        setGoal(goal);
+        m_iRetry_cnt++;
+    }
+
+    m_flag_setgoal = false;
+    m_flag_PREEMPTED = false;
+
+
+  }
+  else if(msgResult->status.status == PREEMPTED) //bumper On Check...
+  {
+    // if(_pFlag_Value.BUMPER_BT)
+    //     ex_iDocking_CommandMode = 100;
+    m_flag_PREEMPTED = true;
+    
+  }
+  else
+  {
+    _pFlag_Value.m_bflag_NextStep = false;
+    ROS_INFO("resultCallback: %d ",msgResult->status.status);
+    _pRobot_Status.m_iMovebase_Result = msgResult->status.status;
+    //costmap clear call//
+    //clear_costmap_client.call(m_request);
+  }
+
 }
 
 /////*******************************************************************************//////

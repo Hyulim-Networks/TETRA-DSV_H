@@ -3059,9 +3059,10 @@ void BatteryCallback(const std_msgs::Int32::ConstPtr& msg)
 
 void EMGCallback(const std_msgs::Int32::ConstPtr& msg)
 {
+    bool isChange= _pRobot_Status.m_iCallback_EMG != msg->data;
     _pRobot_Status.m_iCallback_EMG = msg->data;
 
-    if(_pRobot_Status.m_iCallback_EMG != 0&& _pFlag_Value.m_emgpush_flag) printf("[EMG] Push EMG button!! _ RED LED On \n");
+    if(_pRobot_Status.m_iCallback_EMG != 0&& isChange) printf("[EMG] Push EMG button!! _ RED LED On \n");
 
     if(_pRobot_Status.m_iCallback_EMG != 0)
     {

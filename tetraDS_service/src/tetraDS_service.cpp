@@ -1555,7 +1555,7 @@ void TebMarkers_Callback(const visualization_msgs::Marker::ConstPtr& msg)
                 {
                     if(!m_flag_Dynamic_TebMarkers_major_update)
                     {
-                        Dynamic_reconfigure_Teb_Set_DoubleParam("max_vel_x", 0.3);
+                        Dynamic_reconfigure_Teb_Set_DoubleParam("max_vel_x", 0.1);
                         m_flag_Dynamic_TebMarkers_major_update = true;
                         _pFlag_Value.m_bTebMarker_reconfigure_flag = true;
                     }
@@ -1600,7 +1600,7 @@ void Teblocalplan_Callback(const geometry_msgs::PoseArray::ConstPtr& msg)
         {
             if(!m_flag_Dynamic_Teblocalplan_major_update)
             {
-                Dynamic_reconfigure_Teb_Set_DoubleParam("max_vel_theta", 0.35);
+                Dynamic_reconfigure_Teb_Set_DoubleParam("max_vel_theta", 0.25);
                 m_flag_Dynamic_Teblocalplan_major_update = true;
                 m_flag_Dynamic_Teblocalplan_minor_update = false;
                 _pFlag_Value.m_bTebMarker_reconfigure_flag = true;

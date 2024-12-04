@@ -32,7 +32,6 @@
 #include <sensor_msgs/LaserScan.h>
 #include <sensor_msgs/PointCloud2.h> //bumper
 #include <sensor_msgs/Joy.h> //add 
-#include <sensor_msgs/Range.h> //Ultrasonic//
 #include <teb_local_planner/TrajectoryMsg.h>
 #include <teb_local_planner/TrajectoryPointMsg.h>
 #include <teb_local_planner/FeedbackMsg.h>
@@ -446,11 +445,6 @@ typedef struct AR_TAG_POSE
 }AR_TAG_POSE;
 AR_TAG_POSE _pAR_tag_pose;
 
-// Ultrasonic_range//
-float m_Ultrasonic_DL_Range = 0.0;
-float m_Ultrasonic_DR_Range = 0.0;
-float m_Ultrasonic_RL_Range = 0.0;
-float m_Ultrasonic_RR_Range = 0.0;
 
 //roslaunch mode check//
 int ex_ilaunchMode = 0;
@@ -6386,12 +6380,6 @@ int main (int argc, char** argv)
 
     //Lift_Info Subscriber//
     ros::Subscriber sensor_status = nInfo.subscribe<std_msgs::Int32>("lift_sensor", 1, SensorCallback2); //pathing on tetraDS_interface
-
-    //Ultrasonic_subscriber//
-    // ros::Subscriber ultrasonic_FL = nInfo.subscribe<sensor_msgs::Range>("Ultrasonic_D_L", 10, Ultrasonic_DL_Callback);
-    // ros::Subscriber ultrasonic_FR = nInfo.subscribe<sensor_msgs::Range>("Ultrasonic_D_R", 10, Ultrasonic_DR_Callback);
-    //ros::Subscriber ultrasonic_RL = nInfo.subscribe<sensor_msgs::Range>("Ultrasonic_R_L", 10, Ultrasonic_RL_Callback);
-    //ros::Subscriber ultrasonic_RR = nInfo.subscribe<sensor_msgs::Range>("Ultrasonic_R_R", 10, Ultrasonic_RR_Callback);
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     //bumper_data to Pointcloud2_data/// //Front Bumper_wbjin_20240621//

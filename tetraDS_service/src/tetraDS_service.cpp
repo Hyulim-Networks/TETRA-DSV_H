@@ -1609,7 +1609,7 @@ void Teblocalplan_Callback(const geometry_msgs::PoseArray::ConstPtr& msg)
         {
             if(!m_flag_Dynamic_Teblocalplan_minor_update)
             {
-                Dynamic_reconfigure_Teb_Set_DoubleParam("max_vel_theta", 0.1); //0.15
+                Dynamic_reconfigure_Teb_Set_DoubleParam("max_vel_theta", 0.11); //0.15
                 m_flag_Dynamic_Teblocalplan_minor_update = true;
                 m_flag_Dynamic_Teblocalplan_major_update = false;
                 _pFlag_Value.m_bTebMarker_reconfigure_flag = true;

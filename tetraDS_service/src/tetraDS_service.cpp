@@ -2126,7 +2126,7 @@ bool Goto_Command2(tetraDS_service::gotolocation2::Request &req,
     LED_Toggle_Control(1, 3,100,3,1);
     LED_Turn_On(63);
 
-    if(_pRobot_Status.m_iCallback_Charging_status <= 1 && (_pAR_tag_pose.m_iAR_tag_id == -1 || _pAR_tag_pose.m_transform_pose_x >= 0.4)) //Nomal ... 231129 adjust by mwcha
+    if(_pRobot_Status.m_iCallback_Charging_status <= 1 && (_pAR_tag_pose.m_iAR_tag_id == -1 || _pAR_tag_pose.m_transform_pose_x >= 0.8)) 
     {
         setGoal(goal);
         bResult = true;
@@ -3648,7 +3648,7 @@ bool ChargingStation_tracking(bool bOn, int marker_id)
             //if(m_fdistance > 0.9 && m_fdistance < 2.0)
             if(m_fdistance > 0.55 && m_fdistance < 2.0)
             {
-                cmd->linear.x = 1.0 * (m_fdistance /1.2) * 0.1; // 0.15 
+                cmd->linear.x = 1.0 * (m_fdistance /1.5) * 0.05; // 0.15 
                 //printf("linear velocity: %.2f \n", cmd->linear.x);
                 if(cmd->linear.x > 1.0)
                 {
@@ -3723,7 +3723,7 @@ bool ChargingStation_Yaw_tracking()
     float m_fdistance = 0.0;
     m_fdistance = sqrt(_pAR_tag_pose.m_transform_pose_x * _pAR_tag_pose.m_transform_pose_x + _pAR_tag_pose.m_transform_pose_y * _pAR_tag_pose.m_transform_pose_y);
 
-    if(_pAR_tag_pose.m_target_yaw <= 0.0174533/2 && _pAR_tag_pose.m_target_yaw >= -0.0174533/2) //+- 0.5deg
+    if(_pAR_tag_pose.m_target_yaw <= 0.0174533 && _pAR_tag_pose.m_target_yaw >= -0.0174533) //+- 1.0deg
     {
         ex_iDocking_CommandMode = 4;
         bResult = true;

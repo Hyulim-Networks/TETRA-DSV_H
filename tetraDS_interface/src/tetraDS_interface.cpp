@@ -110,7 +110,7 @@ double m_dLoadcell_weight = 0.0;
 int m_dConveyor_sensor = 0; 
 int m_iConveyor_movement = 0;
 bool m_bConveyor_option = true;
-//Lift sensor status// mwcha
+//Lift sensor status
 int m_dLift_sensor = 0; 
 int m_iLift_movement = 0;
 bool m_bLift_option = true;
@@ -894,7 +894,7 @@ int main(int argc, char * argv[])
 	n.getParam("conveyor_option", m_bConveyor_option);
 	printf("##conveyor_option: %d \n", m_bConveyor_option);
 
-	//Read Lift Option Param Read// mwcha
+	//Read Lift Option Param Read
 	n.getParam("lift_option", m_bLift_option);
 	printf("##lift_option: %d \n", m_bLift_option);
 

@@ -88,7 +88,6 @@
     <child link="base_link" />
   </joint>
 
- <!-- define a front caster add by mwcha -->
   <joint name="front_l_caster_joint" type="fixed">
     <axis xyz="0 1 0" />
     <origin xyz="${caster_offset_x} ${caster_offset_y} 0" rpy="0 0 0" />
@@ -121,7 +120,6 @@
   </visual>
     </link>
 
- <!-- define a behind caster add by mwcha -->
   <joint name="behind_l_caster_joint" type="fixed">
     <axis xyz="0 1 0" />
     <origin xyz="${caster_offset_x} ${caster_offset_y} 0" rpy="0 0 0" />
@@ -154,7 +152,6 @@
   </visual>
     </link>
 
- <!-- define a lidar model - no information of TF and only model ... add by mwcha -->
   <joint name="tim571_f_lidar" type="fixed">
     <axis xyz="0 1 0" />
     <origin xyz="0.0 0.0 0.0" rpy="0 0 0" />
@@ -188,4 +185,3 @@
     </link>
 
 </robot>
-

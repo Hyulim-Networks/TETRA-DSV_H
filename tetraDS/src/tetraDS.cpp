@@ -156,7 +156,7 @@ class TETRA
         	geometry_msgs::Quaternion odom_quat = tf::createQuaternionMsgFromYaw(coordinates[2]);
 		
         	geometry_msgs::TransformStamped odom_trans;
-		if(!m_bEKF_option) //add...ekf_localization option _ wbjin
+		if(!m_bEKF_option) 
 		{
 			odom_trans.header.stamp = current_time;
 			if(has_prefix)

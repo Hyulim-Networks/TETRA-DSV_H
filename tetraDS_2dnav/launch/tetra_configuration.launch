@@ -26,7 +26,7 @@
 
   <!-- 2D LiDAR  SICK TIM571 _ forward -->
   <node name="sick_tim571_1" pkg="sick_tim" type="sick_tim551_2050001" respawn="false" output="screen">
-    <remap from="scan" to="scan"/> <!--add H model mwcha-->
+    <remap from="scan" to="scan"/> 
     <param name="min_ang" type="double" value="-2.35619" /> <!--135deg-->
     <param name="max_ang" type="double" value="2.35619" />  <!--135deg-->
     <param name="intensity" type="bool" value="false" />
@@ -45,7 +45,7 @@
 
   <!-- 2D LiDAR  SICK TIM571 _ backward -->
   <node name="sick_tim571_2" pkg="sick_tim" type="sick_tim551_2050001" respawn="false" output="screen">
-    <remap from="scan" to="scan_b"/> <!--add H model mwcha-->
+    <remap from="scan" to="scan_b"/>
     <param name="min_ang" type="double" value="-2.35619" /> <!--135deg-->
     <param name="max_ang" type="double" value="2.35619" />  <!--135deg-->
     <param name="intensity" type="bool" value="false" />

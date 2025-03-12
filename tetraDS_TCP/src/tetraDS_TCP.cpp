@@ -65,7 +65,6 @@
 #include "tetraDS_TCP/dockingcontrol.h" //SRV
 #include "tetraDS_TCP/power_set_outport.h" //SRV
 #include "tetraDS_TCP/power_get_io_status.h" //SRV
-//add...230405_wbjin
 #include "tetraDS_TCP/power_set_single_outport.h" //SRV
 
 #define BUF_LEN 4096
@@ -475,7 +474,6 @@ bool Set_Output(int Output0, int Output1, int Output2, int Output3, int Output4,
 
 }
 
-//add_230405_wbjin
 bool Set_Single_Output(int Output_id, int iValue)
 {
     bool bResult = false;

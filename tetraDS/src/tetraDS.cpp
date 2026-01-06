@@ -143,12 +143,20 @@ class TETRA
 
     void pub()
 	{
-        	double dt=(current_time-last_time).toSec();
-        	double velocity[3];
+		double dt=(current_time-last_time).toSec();
+		double velocity[3];
+
+		double dx = coordinates[0] - prev_coordinates[0];
+		double dy = coordinates[1] - prev_coordinates[1];
+		double dtheta = coordinates[2] - prev_coordinates[2];
+
+		dtheta = atan2(sin(dtheta), cos(dtheta));
+		velocity[2] = dtheta / dt;
+		velocity[0] = (dx * cos(coordinates[2]) + dy * sin(coordinates[2])) / dt;
+		velocity[1] = (-dx * sin(coordinates[2]) + dy * cos(coordinates[2])) / dt;
 
 		for(int i=0;i<3;i++)
 		{
-		    velocity[i]=(coordinates[i]-prev_coordinates[i])/dt;
 		    prev_coordinates[i]=coordinates[i];
 		}
 
@@ -194,7 +202,7 @@ class TETRA
 		odom.pose.pose.position.z= 0.0;
 		odom.pose.pose.orientation= odom_quat;
 		odom.twist.twist.linear.x = velocity[0];
-		odom.twist.twist.linear.y = velocity[1];
+		odom.twist.twist.linear.y = 0.0;
 		odom.twist.twist.linear.z = 0.0;
 		odom.twist.twist.angular.z = velocity[2];
 		odom_publisher.publish(odom);
@@ -520,7 +528,7 @@ int main(int argc, char * argv[])
 	linear_position_move_service = param.advertiseService("linear_move_cmd", Linear_Move_Command);
 	angular_position_move_service = param.advertiseService("angular_move_cmd", Angular_Move_Command);
 
-    ros::Rate loop_rate(30.0); //default: 30HZ
+    ros::Rate loop_rate(100.0); //default: 100HZ
 
 	sprintf(port, "/dev/ttyS0");
 	//RS232 Connect
@@ -574,55 +582,8 @@ int main(int argc, char * argv[])
 		input_linear  = linear;
 		input_angular = angular;
 
-		//smoother velocity Loop
-		//linear_velocity
-		if(linear > 0)
-			m_bForwardCheck = true;
-		else
-			m_bForwardCheck = false;
-
 		
-		if(m_bForwardCheck)
-		{
-		
-			if(input_linear > control_linear)
-			{
-				control_linear = min(input_linear, control_linear + 0.01);  //10mm++
-	
-			}
-			else if(input_linear < control_linear)
-			{
-				control_linear = max(input_linear, control_linear - 0.05);  //50mm --
-
-			}	
-			else
-			{
-				control_linear = input_linear;
-			}
-		}
-		else
-		{
-			if(input_linear < control_linear)
-			{
-				control_linear = max(input_linear, control_linear - 0.01);
-				if(control_linear > 0)
-				{
-					control_linear = max(input_linear, control_linear - 0.05);  //50mm --
-				}
-		
-			}
-			else if(input_linear > control_linear)
-			{
-				control_linear = min(input_linear, control_linear + 0.05);
-
-			}
-			else
-			{
-				control_linear = input_linear;
-			}
-		}
-		
-		//control_linear = input_linear;
+		control_linear = input_linear;
 		control_angular = input_angular;
 
 		//EMG Check Loop

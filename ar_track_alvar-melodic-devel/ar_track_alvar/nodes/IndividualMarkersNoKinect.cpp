@@ -103,7 +103,7 @@ void getCapCallback (const sensor_msgs::ImageConstPtr & image_msg)
             // do this conversion here -jbinney
             IplImage ipl_image = cv_ptr_->image;
 
-            marker_detector.Detect(&ipl_image, cam, true, false, max_new_marker_error, max_track_error, CVSEQ, true);
+            marker_detector.Detect(&ipl_image, cam, false, false, max_new_marker_error, max_track_error, CVSEQ, true);
             arPoseMarkers_.markers.clear ();
 			for (size_t i=0; i<marker_detector.markers->size(); i++)
 			{
@@ -223,9 +223,10 @@ void configCallback(ar_track_alvar::ParamsConfig &config, uint32_t level)
 
   enabled = config.enabled;
   max_frequency = config.max_frequency;
-  marker_size = config.marker_size;
   max_new_marker_error = config.max_new_marker_error;
   max_track_error = config.max_track_error;
+  marker_size = config.marker_size;
+  marker_detector.SetMarkerSize(marker_size, marker_resolution, marker_margin);
 }
 
 void enableCallback(const std_msgs::BoolConstPtr& msg)

@@ -1527,90 +1527,12 @@ void Particle_Callback(const geometry_msgs::PoseArray::ConstPtr& msg)
 
 void TebMarkers_Callback(const visualization_msgs::Marker::ConstPtr& msg)
 {
-    float m_point_vector = 0.0;
-    if(msg->ns == "ViaPoints")
-    {
-        m_iViaPoint_Index = msg->points.size();
-        //printf("!!!m_iIndex: %d \n", m_iIndex);
-        if(m_iViaPoint_Index <= 1)
-        {
-            if(!_pFlag_Value.m_bTebMarker_reconfigure_flag)
-            {
-                if(_pDynamic_param.m_linear_vel >= 0.3)
-                {
-                    if(!m_flag_Dynamic_TebMarkers_major_update)
-                    {
-                        Dynamic_reconfigure_Teb_Set_DoubleParam("max_vel_x", 0.1);
-                        m_flag_Dynamic_TebMarkers_major_update = true;
-                        _pFlag_Value.m_bTebMarker_reconfigure_flag = true;
-                    }
-                }
-            }
-        }
-        else
-        {
-            _pFlag_Value.m_bTebMarker_reconfigure_flag = false;
-            m_flag_Dynamic_TebMarkers_major_update = false;
-        }
-        _pFlag_Value.m_bflagGo = true;
-    }
-    else
-    {
-        _pFlag_Value.m_bflagGo = false;
-    }
+    
 }
 
 void Teblocalplan_Callback(const geometry_msgs::PoseArray::ConstPtr& msg)
 {
-    double m_dDelta_Value = 0.0;
-    int m_iPoseIndex = msg->poses.size();
-    for(int i=0; i<m_iPoseIndex; i++)
-    {
-        m_dTeb_Pose_head_Angle[i] = Quaternion2Yaw(msg->poses[i].orientation.w, 
-                                                    msg->poses[i].orientation.x, 
-                                                    msg->poses[i].orientation.y, 
-                                                    msg->poses[i].orientation.z);
-
-    }
-
-    m_dDelta_Value = m_dTeb_Pose_head_Angle[1] - m_dTeb_Pose_head_Angle[0];
-    if(m_dDelta_Value < 0)
-    {
-        m_dDelta_Value = -1.0 * m_dDelta_Value;
-    }
-
-    if(_pFlag_Value.m_bCorneringFlag)
-    {
-        if(m_dDelta_Value >= 3.5)
-        {
-            if(!m_flag_Dynamic_Teblocalplan_major_update)
-            {
-                Dynamic_reconfigure_Teb_Set_DoubleParam("max_vel_theta", 0.25);
-                m_flag_Dynamic_Teblocalplan_major_update = true;
-                m_flag_Dynamic_Teblocalplan_minor_update = false;
-                _pFlag_Value.m_bTebMarker_reconfigure_flag = true;
-            }
-            else
-            {
-                _pFlag_Value.m_bTebMarker_reconfigure_flag = false;
-            }
-            
-        }
-        else
-        {
-            if(!m_flag_Dynamic_Teblocalplan_minor_update)
-            {
-                Dynamic_reconfigure_Teb_Set_DoubleParam("max_vel_theta", 0.11); //0.15
-                m_flag_Dynamic_Teblocalplan_minor_update = true;
-                m_flag_Dynamic_Teblocalplan_major_update = false;
-                _pFlag_Value.m_bTebMarker_reconfigure_flag = true;
-            }
-            else
-            {
-                _pFlag_Value.m_bTebMarker_reconfigure_flag = false;
-            }
-        }
-    }
+    
 }
 
 void setGoal(move_base_msgs::MoveBaseActionGoal& goal)
@@ -6373,38 +6295,6 @@ int main (int argc, char** argv)
             }
         }
 
-        if(_pFlag_Value.m_bFlag_Obstacle_PCL1 || m_iViaPoint_Index <= 1)
-        {
-            if(!m_flag_Dynamic_Linear_velocity_major_update)
-            {
-                Dynamic_reconfigure_Teb_Set_DoubleParam("max_vel_x", _pDynamic_param.MAX_Linear_velocity / 2.0);
-                m_flag_Dynamic_Linear_velocity_major_update = true;
-                m_flag_Dynamic_Linear_velocity_minor_update = false;
-                _pFlag_Value.m_bTebMarker_reconfigure_flag = true;
-            }
-            else
-            {
-                _pFlag_Value.m_bTebMarker_reconfigure_flag = false;
-            }
-        }
-        else
-        {
-            if(!_pFlag_Value.m_bTebMarker_reconfigure_flag)
-            {
-                if(!m_flag_Dynamic_Linear_velocity_minor_update)
-                {
-                    Dynamic_reconfigure_Teb_Set_DoubleParam("max_vel_x", _pDynamic_param.MAX_Linear_velocity);
-                    m_flag_Dynamic_Linear_velocity_minor_update = true;
-                    m_flag_Dynamic_Linear_velocity_major_update = false;
-                    _pFlag_Value.m_bTebMarker_reconfigure_flag = true;
-                }
-            }
-            else
-            {
-                _pFlag_Value.m_bTebMarker_reconfigure_flag = false;
-            }
-        }
-
         //IMU Reset Loop//
         if(m_iTimer_cnt >= 500) //10 sec_polling
         {
@@ -6468,41 +6358,6 @@ int main (int argc, char** argv)
                     ROS_ERROR("[TF_Transform_Error(map to base_footprint)]: %s", ex.what());
                     continue;
                 }
-
-                //Speed Zone Check Loop //////////////////////////////////////////////////////////////////////////////
-                if(m_flag_SpeedZone)
-                {
-                    POINT m_ptPos = {_pTF_pose.poseTFx, _pTF_pose.poseTFy};
-                    for(int i=0; i < _pZoneDataPoint.m_iZone_count; i++)
-                    {
-                        if(isinner(m_ptPos, vV[i]))
-                        {
-                            if(!m_flag_major_update[i])
-                            {
-                                Dynamic_reconfigure_Teb_Set_DoubleParam("max_vel_x", _pTagList[i].dSpeed_value);
-                                _pDynamic_param.MAX_Linear_velocity = _pTagList[i].dSpeed_value;
-                                //printf("_pTagList[%d].dSpeed_value: %.3f \n", i, _pTagList[i].dSpeed_value);
-
-                                //printf(" Inside Check[%d] !!\n", i);
-                                m_flag_major_update[i] = true;
-                                m_flag_minor_update[i] = false;
-                            }
-                        }
-                        else
-                        {
-
-                            if(!m_flag_minor_update[i])
-                            {
-                                Dynamic_reconfigure_Teb_Set_DoubleParam("max_vel_x", _pDynamic_param.MAX_Linear_velocity_origin);
-                                _pDynamic_param.MAX_Linear_velocity = _pDynamic_param.MAX_Linear_velocity_origin;
-
-                                //printf(" Outside Check[%d] !!\n", i);
-                                m_flag_minor_update[i] = true;
-                                m_flag_major_update[i] = false;
-                            }
-                        }
-                    }
-                }    
 
                 //map to odom TF Pose////////////////////////////////////////////////////////////////////////////////////////////////////////////////
                 tf::StampedTransform transform2;

@@ -36,6 +36,7 @@
 #include <tetraDS_interface/power_data_read.h> // SRV
 #include <tetraDS_interface/power_version_read.h> // SRV
 #include <tetraDS_interface/power_adc_read.h> // SRV
+#include <tetraDS_interface/power_read_lift.h> // SRV
 
 
 
@@ -155,6 +156,7 @@ tetraDS_interface::lift_auto_movement Auto_Move_cmd;
 //Lift Manual Movement
 ros::ServiceServer lift_manual_movement_service;
 tetraDS_interface::lift_manual_movement Manual_Move_cmd;
+ros::ServiceServer power_read_lift_service;
 
 //POWER Enalbe service
 ros::ServiceServer power_enable_service;
@@ -783,6 +785,19 @@ bool Conveyor_parameter_Write_Command(tetraDS_interface::conveyor_parameter_writ
 	return true;
 }
 
+bool power_read_lift_cmd(tetraDS_interface::power_read_lift::Request  &req, 
+				tetraDS_interface::power_read_lift::Response &res)
+{
+	bool bResult = false;
+    
+	dssp_rs232_power_read_lift(&m_iParam0);
+	res.data = m_iParam0;
+
+   	bResult = true;
+	res.command_Result = bResult;
+	return true;
+}
+
 int limit_time = 0;
 int main(int argc, char * argv[])
 {
@@ -831,6 +846,7 @@ int main(int argc, char * argv[])
 	lift_auto_movement_service = CONVEYOR_h.advertiseService("Auto_Move_cmd", Lift_Auto_Move_Command);
 	//Lift Manual Movement Service
 	lift_manual_movement_service = CONVEYOR_h.advertiseService("Manual_Move_cmd", Lift_Manual_Move_Command);
+	power_read_lift_service = CONVEYOR_h.advertiseService("power_read_lift_cmd", power_read_lift_cmd);
 
 	//Integral Log Service
 	ros::NodeHandle log_h;
@@ -915,6 +931,12 @@ int main(int argc, char * argv[])
 	//Charge port Enable//
 	dssp_rs232_power_module_set_charging_ready(1);
 
+	if(m_bLift_option)
+	{
+		dssp_rs232_power_module_read_conveyor_sensor(&m_dLift_sensor);
+		if(m_dLift_sensor==0) dssp_rs232_power_module_lift_movement(0);
+	}
+
     	while(ros::ok())
 	{
         	ros::spinOnce();
@@ -992,7 +1014,8 @@ int main(int argc, char * argv[])
 			lift_sensor_publisher.publish(lift_sensor);
 
 			//lift Movement status...need to change firmware...
-			dssp_rs232_power_module_read_conveyor_movement(&m_iLift_movement);
+			dssp_rs232_power_read_lift(&m_iLift_movement);
+			//if(m_iLift_movement==0)dssp_rs232_power_module_read_conveyor_movement(&m_iLift_movement);
 
 			lift_movement.data = m_iLift_movement;
 			lift_movement_publisher.publish(lift_movement);

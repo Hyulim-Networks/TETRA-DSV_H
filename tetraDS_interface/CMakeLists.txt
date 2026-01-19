@@ -48,6 +48,7 @@ add_service_files(
   power_version_read.srv
   power_adc_read.srv
   power_get_io_status.srv
+  power_read_lift.srv
 )
 
 ## Generate added messages and services with any dependencies listed here

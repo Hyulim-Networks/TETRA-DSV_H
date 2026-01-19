@@ -346,3 +346,13 @@ int  dssp_rs232_power_module_read_conveyor_movement(int* result)
 
 	return ret;
 }
+
+
+int  dssp_rs232_power_read_lift(int* result)
+{
+	int ret;
+
+	ret = power_read_lift(_power, result);
+
+	return ret;
+}

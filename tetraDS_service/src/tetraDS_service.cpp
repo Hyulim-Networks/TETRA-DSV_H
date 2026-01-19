@@ -421,6 +421,7 @@ ROBOT_STATUS _pRobot_Status;
 //AR_TAG Pose
 typedef struct AR_TAG_POSE
 {
+    string m_iAR_tag_frame = "TETRA_NS/usb_cam";
     int m_iSelect_AR_tag_id = 0;
     int m_iAR_tag_id_Index = 0;
     int m_iAR_tag_id = -1;
@@ -700,6 +701,10 @@ bool m_bToggle_enabled_flag2 = false;
 
 //SpeedZone
 vector<POINT> vV[255];
+
+std::atomic<bool> isRecharging(false);
+ros::Publisher goal_pub_;
+
 
 
 //Read virtual_wall JSON **************************************************************************************************************//
@@ -1290,6 +1295,7 @@ void Docking_EXIT()
     cmd->linear.x =  0.0; 
     cmd->angular.z = 0.0;
     ex_iDocking_CommandMode = 0;
+    docking_progress.data = 0;
     printf("[EXIT]: Docking Exit !! \n");
 }
 
@@ -1661,7 +1667,7 @@ bool OpenLocationFile(string str_location)
         }
         else
         {
-            ROS_INFO("File Open Fail: %s", str_location.c_str());
+            ROS_INFO("File Open Fail %s", str_location.c_str());
             bResult = false;
         }
     }
@@ -1763,7 +1769,7 @@ bool Lift_Check()
     else
     {
         // ex_iLiftMode = 1; //callback, lifting
-        ex_iDocking_CommandMode = 12;
+        ex_iDocking_CommandMode = 14;
         printf("SET ar_marker_20 and Go to lift \n");
         bResult = true;
     }
@@ -1786,7 +1792,7 @@ bool Un_Lift_Check()
     else
     {
         // ex_iLiftMode = 1; //callback, lifting
-        ex_iDocking_CommandMode = 22;
+        ex_iDocking_CommandMode = 24;
         printf(" Go to Un Lift !! \n");
         bResult = true;
     }
@@ -1868,10 +1874,9 @@ bool LiftMovement1(ros::ServiceClient& lift_cmd_client)
     if (lift_cmd_client.call(lift_srv))
     {
         ROS_INFO("Lift movement 0 ... CNO LIFT DOWN ! ");
-
-        // Wait for 15 seconds
-        std::chrono::seconds duration(15);
-        std::this_thread::sleep_for(duration);
+        while(_pRobot_Status.LIFT_MOVEMENT>0){
+            ros::spinOnce();
+        }
 
         return true;
     }
@@ -1889,10 +1894,10 @@ bool LiftMovement2(ros::ServiceClient& lift_cmd_client)
     if (lift_cmd_client.call(lift_srv))
     {
         ROS_INFO("Lift movement 1 ... CN1 LIFT UP ! ");
-
-        // Wait for 15 seconds
-        std::chrono::seconds duration(15);
-        std::this_thread::sleep_for(duration);
+        while(_pRobot_Status.LIFT_MOVEMENT<240){
+            ros::spinOnce();
+        }
+        sleep(3); //wait 3sec
 
         return true;
     }
@@ -1903,21 +1908,36 @@ bool LiftMovement2(ros::ServiceClient& lift_cmd_client)
     }
 }
 
-bool Depart_1500mm_Liftmove() // not use cygbot lidar because backward move in port 
+bool Depart_1500mm_Liftmove(int mode) // not use cygbot lidar because backward move in port 
 {
     printf("GO Depart 1500mm OUT OF LIFT PORT \n");
 
     LED_Toggle_Control(1, 5,100,5,1);
     LED_Turn_On(63);
+    double speed = 0.0;
+    double time = 0.0;
+
+    switch (mode)
+    {
+    case 1:
+        speed = -0.3;
+        time = 5.0;
+        break;
+    
+    default:
+        speed = -0.1;
+        time = 15.0;
+        break;
+    }
 
     geometry_msgs::TwistPtr cmd(new geometry_msgs::Twist());
     ros::Time start_time = ros::Time::now();
-    ros::Duration duration(15.0); //define duration seconds
+    ros::Duration duration(time); //define duration seconds
     ros::Rate rate(10); // 10Hz
 
     while(ros::Time::now() - start_time < duration)
     {
-        cmd->linear.x = -0.1; //0.1m/s max velocity depart move * 15sec = distance : 1.5m
+        cmd->linear.x = speed; 
         cmd->angular.z = 0.0;
         cmdpub_.publish(cmd);
         
@@ -1969,7 +1989,7 @@ bool Goto_Command(tetraDS_service::gotolocation::Request &req,
     res.goal_quarterW  = _pGoal_pose.goal_quarterW;
     goto_goal_id.id = req.Location;
 
-    ROS_INFO("goto_id.id: %s", goto_goal_id.id.c_str());
+    ROS_INFO("goto_id.id %s", goto_goal_id.id.c_str());
 
     if(_pRobot_Status.m_iCallback_Charging_status <= 1 && (_pAR_tag_pose.m_iAR_tag_id == -1 || _pAR_tag_pose.m_transform_pose_x >= 0.4)) 
     {
@@ -2555,7 +2575,7 @@ bool Patrol_Command(tetraDS_service::patrol::Request &req,
     for(int i=0; i<m_patrol_location_cnt; i++)
     {
         arr_patrol_location[i] = req.location_name[i];
-        ROS_INFO("# arr_patrol_location[%d]:%s ", i, arr_patrol_location[i].c_str());
+        ROS_INFO("# arr_patrol_location[%d] %s ", i, arr_patrol_location[i].c_str());
     }
    
 	/*
@@ -2924,13 +2944,13 @@ bool Set2D_Pose_Estimate_Command(tetraDS_service::pose_estimate::Request  &req,
 
 void reCharging()
 {
+    if(isRecharging.exchange(true)) {
+        return;
+    }
+
     _pFlag_Value.m_Onetime_reset_cnt = 0;
     geometry_msgs::TwistPtr cmd(new geometry_msgs::Twist());
     ROS_INFO("reCharging...");
-    cmd->linear.x = 0.1;
-    cmd->angular.z = 0.0;
-    cmdpub_.publish(cmd);
-    sleep(2);
     cmd->linear.x = -0.1;
     cmd->angular.z = 0.0;
     cmdpub_.publish(cmd);
@@ -2938,16 +2958,37 @@ void reCharging()
     cmd->linear.x = 0.0;
     cmd->angular.z = 0.0;
     cmdpub_.publish(cmd);
+    while(_pRobot_Status.m_iCallback_Charging_status==7){
+        ros::spinOnce();
+    }
+    cmd->linear.x = 0.05;
+    cmd->angular.z = 0.0;
+    cmdpub_.publish(cmd);
+    sleep(2);
+    while(_pRobot_Status.m_iCallback_Charging_status==1){
+        ros::spinOnce();
+    }
+    cmd->linear.x = 0.0;
+    cmd->angular.z = 0.0;
+    cmdpub_.publish(cmd);
+    ROS_INFO("reCharging finish");
+    isRecharging = false;
 }
 
 void ChargingCallback(const std_msgs::Int32::ConstPtr& msg)
 {
+    if(_pRobot_Status.m_iCallback_Charging_status != msg->data){
+        ROS_INFO("_pRobot_Status.m_iCallback_Charging_status != msg->data %d", msg->data);
+    }
     _pRobot_Status.m_iCallback_Charging_status = msg->data; //docking_status
     
     if(_pRobot_Status.m_iCallback_Charging_status == 7)
     {
         _pFlag_Value.m_Onetime_reset_cnt++;
-        if(_pFlag_Value.m_Onetime_reset_cnt > 100) reCharging();
+        if(_pFlag_Value.m_Onetime_reset_cnt > 1000) {
+            std::thread t(reCharging);
+            t.detach();
+        }
     }else{
         _pFlag_Value.m_Onetime_reset_cnt = 0;
     }
@@ -3085,6 +3126,10 @@ void SensorCallback2(const std_msgs::Int32::ConstPtr& msg)
 {
     _pRobot_Status.m_iLift_Sensor_info = msg->data; //Lift function
 }
+void LiftCallback(const std_msgs::Int32::ConstPtr& msg)
+{
+    _pRobot_Status.LIFT_MOVEMENT = msg->data; 
+}
 /////////LanMark file Write & Read Fuction///////////
 bool SaveLandMark(LANDMARK_POSE p)
 {
@@ -3112,7 +3157,68 @@ bool SaveLandMark(LANDMARK_POSE p)
     return bResult;
 }
 
+void setARGoal(double target_dist)
+{
+    if (_pAR_tag_pose.m_iAR_tag_id == -1)
+    {
+        printf("No AR Tag Detected! Cannot set goal.\n");
+        return;
+    }
 
+    geometry_msgs::PoseStamped marker_pose;
+    geometry_msgs::PoseStamped marker_pose_map; 
+    ros::Time now = ros::Time(0);
+
+    tf::TransformListener tfListener;
+
+    marker_pose.header.frame_id = _pAR_tag_pose.m_iAR_tag_frame;
+    marker_pose.header.stamp = now;
+    marker_pose.pose.position.x = _pAR_tag_pose.m_fAR_tag_pose_x;
+    marker_pose.pose.position.y = _pAR_tag_pose.m_fAR_tag_pose_y;
+    marker_pose.pose.position.z = _pAR_tag_pose.m_fAR_tag_pose_z;
+    marker_pose.pose.orientation.x = _pAR_tag_pose.m_fAR_tag_orientation_x;
+    marker_pose.pose.orientation.y = _pAR_tag_pose.m_fAR_tag_orientation_y;
+    marker_pose.pose.orientation.z = _pAR_tag_pose.m_fAR_tag_orientation_z;
+    marker_pose.pose.orientation.w = _pAR_tag_pose.m_fAR_tag_orientation_w;
+
+    try {
+        tfListener.waitForTransform("map", marker_pose.header.frame_id, now, ros::Duration(3.0));
+        tfListener.transformPose("map", marker_pose, marker_pose_map);
+    } catch (tf::TransformException &ex) {
+        ROS_WARN("%s", ex.what());
+    }
+
+    tf::Quaternion q;
+    q.setRPY(0, 0, -_pAR_tag_pose.m_fAR_tag_pitch);
+    tf::Matrix3x3 m(q);
+    tf::Vector3 forward = m.getColumn(2); 
+
+    double offset = -target_dist;
+    geometry_msgs::PoseStamped goal_pose = marker_pose_map;
+
+    goal_pose.pose.position.x += offset * cos(-_pAR_tag_pose.m_fAR_tag_pitch-(-0.044*target_dist+0.1022));
+    goal_pose.pose.position.y += offset * sin(-_pAR_tag_pose.m_fAR_tag_pitch-(-0.044*target_dist+0.1022));
+    goal_pose.pose.position.z = 0.0;
+
+    goal_pose.pose.orientation.x = q.x();
+    goal_pose.pose.orientation.y = q.y();
+    goal_pose.pose.orientation.z = q.z();
+    goal_pose.pose.orientation.w = q.w();
+
+    move_base_msgs::MoveBaseActionGoal goal;
+
+    goal.header.frame_id = "map"; 
+    goal.header.stamp = now;
+    goal.goal_id.stamp = now;
+    goal.goal.target_pose = goal_pose;
+
+    service_pub.publish(goal);
+    //goal_pub_.publish(goal_pose);
+
+    printf("setARGoal call Distance to Tag %.3fm -> Moving %.3fm\n", 
+            _pAR_tag_pose.m_fAR_tag_pose_z, target_dist);
+    
+}
 
 //AR_tagCallback
 void AR_tagCallback(ar_track_alvar_msgs::AlvarMarkers req) 
@@ -3129,6 +3235,7 @@ void AR_tagCallback(ar_track_alvar_msgs::AlvarMarkers req)
         }
 
         //AR_Tag data update...
+        _pAR_tag_pose.m_iAR_tag_frame = req.markers[_pAR_tag_pose.m_iAR_tag_id_Index].header.frame_id;
         _pAR_tag_pose.m_iAR_tag_id = req.markers[_pAR_tag_pose.m_iAR_tag_id_Index].id;
         _pAR_tag_pose.m_fAR_tag_pose_x = req.markers[_pAR_tag_pose.m_iAR_tag_id_Index].pose.pose.position.x;
         _pAR_tag_pose.m_fAR_tag_pose_y = req.markers[_pAR_tag_pose.m_iAR_tag_id_Index].pose.pose.position.y;
@@ -3150,6 +3257,7 @@ void AR_tagCallback(ar_track_alvar_msgs::AlvarMarkers req)
         m.getRotation(q);
         //< rotation Matrix -> rpy
         m.getRPY(_pAR_tag_pose.m_fAR_tag_roll, _pAR_tag_pose.m_fAR_tag_pitch, _pAR_tag_pose.m_fAR_tag_yaw);
+        _pAR_tag_pose.m_fAR_tag_pitch+=0.02;
         _pAR_tag_pose.m_fPositioning_Angle = _pAR_tag_pose.m_fAR_tag_pitch * (180.0/M_PI);
 
         //Transform Axis
@@ -3162,6 +3270,9 @@ void AR_tagCallback(ar_track_alvar_msgs::AlvarMarkers req)
         _pAR_tag_pose.m_iAR_tag_id = -1;
     }  
 }
+
+
+
 
 
 // add Move_base Die Check
@@ -3511,7 +3622,7 @@ bool BumperCollision_Behavior()
         {
             LED_Toggle_Control(1, 3,100,3,1);
             LED_Turn_On(63);
-            ROS_INFO("[RETRY Behavior2]: goto_ %s", goal.goal_id.id.c_str());
+            ROS_INFO("[RETRY Behavior2] goto_ %s", goal.goal_id.id.c_str());
             setGoal(goal);
             _pFlag_Value.m_bflagGo2 = false;
         }
@@ -3559,7 +3670,7 @@ bool ChargingStation_tracking(bool bOn, int marker_id)
             //if(m_fdistance > 0.9 && m_fdistance < 2.0)
             if(m_fdistance > 0.55 && m_fdistance < 2.0)
             {
-                cmd->linear.x = 1.0 * (m_fdistance /1.5) * 0.05; // 0.15 
+                cmd->linear.x = 1.0 * m_fdistance * 0.2; // 0.15 
                 //printf("linear velocity: %.2f \n", cmd->linear.x);
                 if(cmd->linear.x > 1.0)
                 {
@@ -3753,12 +3864,11 @@ bool ChargingStation_tracking2(int marker_id)
     geometry_msgs::TwistPtr cmd(new geometry_msgs::Twist());
     
     float m_fdistance = 0.0;
-    if(_pAR_tag_pose.m_iAR_tag_id == marker_id)
-    {
-        m_fdistance = sqrt(_pAR_tag_pose.m_transform_pose_x * _pAR_tag_pose.m_transform_pose_x + _pAR_tag_pose.m_transform_pose_y * _pAR_tag_pose.m_transform_pose_y);
-        if(_pRobot_Status.m_iCallback_Charging_status < 2) 
+        if(_pRobot_Status.m_iCallback_Charging_status < 2&&_pRobot_Status.m_iCallback_Bumper == 0) 
         {
-            cmd->linear.x = 1.0 * (m_fdistance /2.0) * 0.1; // max speed 0.1m/s
+            m_fdistance = sqrt(_pAR_tag_pose.m_transform_pose_x * _pAR_tag_pose.m_transform_pose_x + _pAR_tag_pose.m_transform_pose_y * _pAR_tag_pose.m_transform_pose_y);
+
+            cmd->linear.x = 1.0 * (m_fdistance /2.0) * 0.05; // max speed 0.1m/s
             if(cmd->linear.x > 1.0)
             {
                 //Linear Over speed exit loop......
@@ -3789,25 +3899,6 @@ bool ChargingStation_tracking2(int marker_id)
             ex_iDocking_CommandMode = 6; //5;
             m_iNoMarker_cnt = 0;
         }
-    }
-    else
-    {
-        cmd->linear.x =  0.0; 
-        cmd->angular.z = 0.0;
-        cmdpub_.publish(cmd);
-        printf("[Docking Error] [No Marker 2] After completing calibration and entering the charging station, the marker disappeared! \n"); 
-        if(m_iNoMarker_cnt >= 10)
-        {
-            m_iNoMarker_cnt = 0;
-            ex_iDocking_CommandMode = 6;
-            printf("No Marker 2_Timeout! \n");
-            printf("Please Turn OFF and docking the robot! \n");
-        }
-        else
-        {
-            m_iNoMarker_cnt++;
-        }
-    }
 
     bResult = true;
     return bResult;
@@ -3821,15 +3912,14 @@ bool LiftStation_tracking(bool bOn, int marker_id)
 
     if(bOn)
     {
-        printf("LIFT_ID: %d  \n", marker_id); 
         float m_fdistance = 0.0;
         if(_pAR_tag_pose.m_iAR_tag_id == marker_id)
         {
             m_fdistance = sqrt(_pAR_tag_pose.m_transform_pose_x * _pAR_tag_pose.m_transform_pose_x + _pAR_tag_pose.m_transform_pose_y * _pAR_tag_pose.m_transform_pose_y);
             printf("master_distance: %.5f \n", m_fdistance);
-            if(m_fdistance > 1.6 && m_fdistance < 2.0) 
+            if(m_fdistance > 1.6 && m_fdistance < 3.0) 
             {
-                cmd->linear.x = 1.0 * (m_fdistance / 2.0) * 0.05; 
+                cmd->linear.x = 1.0 * m_fdistance * 0.1; 
                 printf("linear velocity: %.2f \n", cmd->linear.x);
                 if(cmd->linear.x > 1.0)
                 {
@@ -3909,9 +3999,9 @@ bool LiftStation_Yaw_tracking()
     float m_fdistance = 0.0;
     m_fdistance = sqrt(_pAR_tag_pose.m_transform_pose_x * _pAR_tag_pose.m_transform_pose_x + _pAR_tag_pose.m_transform_pose_y * _pAR_tag_pose.m_transform_pose_y);
 
-    if(_pAR_tag_pose.m_target_yaw <= 0.02 && _pAR_tag_pose.m_target_yaw >= -0.02) 
+    if(_pAR_tag_pose.m_target_yaw <= 0.0174533 && _pAR_tag_pose.m_target_yaw >= -0.0174533) 
     {
-        ex_iDocking_CommandMode = 14;
+        ex_iDocking_CommandMode = 15;
         bResult = true;
         return bResult;
     }
@@ -3919,11 +4009,11 @@ bool LiftStation_Yaw_tracking()
     if(_pAR_tag_pose.m_target_yaw > 0)
     {
         printf("--dir \n");
-        cmd->angular.z = -1.0 * _pAR_tag_pose.m_target_yaw * 0.5; 
+        cmd->angular.z = -1.0 * _pAR_tag_pose.m_target_yaw * 1.2; 
         cmdpub_.publish(cmd);
         sleep(2);
 
-        if(m_fdistance > 2.0 || m_fdistance < -2.0) 
+        if(m_fdistance > 3.0 || m_fdistance < -3.0) 
         {
             printf("[Error] Marker too far away !! \n");
             cmd->angular.z = 0.0;
@@ -3935,9 +4025,9 @@ bool LiftStation_Yaw_tracking()
             return bResult;
         }
 
-        while(m_iback_cnt < 30)
+        while(m_iback_cnt < 45)
         {
-            if(_pFlag_Value.m_bFlag_Obstacle_cygbot)
+            if(_pFlag_Value.m_bFlag_MergeScan_Rear)
             {
                 cmd->angular.z = 0.0;
                 cmd->linear.x = 0.0;
@@ -3946,7 +4036,7 @@ bool LiftStation_Yaw_tracking()
             else
             {
                 cmd->angular.z = 0.0;
-                cmd->linear.x = -1.0 * m_fdistance * 0.05; 
+                cmd->linear.x = -1.0 * m_fdistance * 0.1; 
                 cmdpub_.publish(cmd);
                 m_iback_cnt++;
             }
@@ -3963,11 +4053,11 @@ bool LiftStation_Yaw_tracking()
     else
     {
         printf("++dir \n");
-        cmd->angular.z = -1.0 * _pAR_tag_pose.m_target_yaw * 0.5; 
+        cmd->angular.z = -1.0 * _pAR_tag_pose.m_target_yaw * 1.2; 
         cmdpub_.publish(cmd);
         sleep(2);
 
-        if(m_fdistance > 2.0 || m_fdistance < -2.0) 
+        if(m_fdistance > 3.0 || m_fdistance < -3.0) 
         {
             printf("[Error] Marker too far away !! \n");
             cmd->angular.z = 0.0;
@@ -3981,7 +4071,7 @@ bool LiftStation_Yaw_tracking()
 
         while(m_iback_cnt < 30)
         {
-            if(_pFlag_Value.m_bFlag_Obstacle_cygbot)
+            if(_pFlag_Value.m_bFlag_MergeScan_Rear)
             {
                 cmd->angular.z = 0.0;
                 cmd->linear.x = 0.0;
@@ -3990,7 +4080,7 @@ bool LiftStation_Yaw_tracking()
             else
             {
                 cmd->angular.z = 0.0;
-                cmd->linear.x = -1.0 * m_fdistance * 0.04; 
+                cmd->linear.x = -1.0 * m_fdistance * 0.1; 
                 cmdpub_.publish(cmd);
                 m_iback_cnt++;
             }
@@ -4016,13 +4106,23 @@ bool LiftStation_tracking2(int marker_id)
     geometry_msgs::TwistPtr cmd(new geometry_msgs::Twist());
     printf("go to LIFT when H model hit front bumper \n");
 
+    if(_pRobot_Status.m_iCallback_Bumper != 0){
+            cmd->linear.x =  0.0; 
+            cmd->angular.z = 0.0;
+            cmdpub_.publish(cmd);
+            printf("Lift (Conveyor) Tracking STOP & Docking Finish !! \n");
+            ex_iDocking_CommandMode = 16;
+            m_iNoMarker_cnt = 0;
+            return false;
+        }
+
     float m_fdistance = 0.0;
     if(_pAR_tag_pose.m_iAR_tag_id == marker_id)
     {
         m_fdistance = sqrt(_pAR_tag_pose.m_transform_pose_x * _pAR_tag_pose.m_transform_pose_x + _pAR_tag_pose.m_transform_pose_y * _pAR_tag_pose.m_transform_pose_y);
-        if(_pRobot_Status.m_iCallback_Bumper != 1)
+        if(_pRobot_Status.m_iCallback_Bumper == 0)
         {
-            cmd->linear.x = 1.0 * (m_fdistance /2.0) * 0.05; 
+            cmd->linear.x = 1.0 * m_fdistance * 0.2; 
             printf("Lift linear velocity: %.2f \n", cmd->linear.x);
             if(cmd->linear.x > 1.0)
             {
@@ -4045,13 +4145,7 @@ bool LiftStation_tracking2(int marker_id)
             }
             
             cmdpub_.publish(cmd);
-        }
-        if (_pRobot_Status.m_iCallback_Bumper != 1)
-        {
-            // If bumper is not hit, continue tracking
-            return true;
-        }
-        else
+        } else
         {
             cmd->linear.x =  0.0; 
             cmd->angular.z = 0.0;
@@ -4061,6 +4155,9 @@ bool LiftStation_tracking2(int marker_id)
             m_iNoMarker_cnt = 0;
             return false;
         }
+    }else{
+        cmd->linear.x = 0.01;
+        cmdpub_.publish(cmd);
     }
     bResult = true;
     return bResult;
@@ -4080,9 +4177,9 @@ bool Un_LiftStation_tracking(bool bOn, int marker_id)
         {
             m_fdistance = sqrt(_pAR_tag_pose.m_transform_pose_x * _pAR_tag_pose.m_transform_pose_x + _pAR_tag_pose.m_transform_pose_y * _pAR_tag_pose.m_transform_pose_y);
             printf("master_distance: %.5f \n", m_fdistance);
-            if(m_fdistance > 1.6 && m_fdistance < 2.0) 
+            if(m_fdistance > 1.6 && m_fdistance < 3.0) 
             {
-                cmd->linear.x = 1.0 * (m_fdistance / 2.0) * 0.05; 
+                cmd->linear.x = 1.0 * m_fdistance * 0.02; 
                 printf("linear velocity: %.2f \n", cmd->linear.x);
                 if(cmd->linear.x > 1.0)
                 {
@@ -4162,9 +4259,9 @@ bool Un_LiftStation_Yaw_tracking()
     float m_fdistance = 0.0;
     m_fdistance = sqrt(_pAR_tag_pose.m_transform_pose_x * _pAR_tag_pose.m_transform_pose_x + _pAR_tag_pose.m_transform_pose_y * _pAR_tag_pose.m_transform_pose_y);
 
-    if(_pAR_tag_pose.m_target_yaw <= 0.02 && _pAR_tag_pose.m_target_yaw >= -0.02) 
+    if(_pAR_tag_pose.m_target_yaw <= 0.0174533 && _pAR_tag_pose.m_target_yaw >= -0.0174533) 
     {
-        ex_iDocking_CommandMode = 24;
+        ex_iDocking_CommandMode = 25;
         bResult = true;
         return bResult;
     }
@@ -4172,11 +4269,11 @@ bool Un_LiftStation_Yaw_tracking()
     if(_pAR_tag_pose.m_target_yaw > 0)
     {
         printf("--dir \n");
-        cmd->angular.z = -1.0 * _pAR_tag_pose.m_target_yaw * 0.5; 
+        cmd->angular.z = -1.0 * _pAR_tag_pose.m_target_yaw * 1.2; 
         cmdpub_.publish(cmd);
         sleep(2);
 
-        if(m_fdistance > 2.0 || m_fdistance < -2.0) 
+        if(m_fdistance > 3.0 || m_fdistance < -3.0) 
         {
             printf("[Error] Marker too far away !! \n");
             cmd->angular.z = 0.0;
@@ -4188,9 +4285,9 @@ bool Un_LiftStation_Yaw_tracking()
             return bResult;
         }
 
-        while(m_iback_cnt < 30)
+        while(m_iback_cnt < 150)
         {
-            if(_pFlag_Value.m_bFlag_Obstacle_Left_b && _pFlag_Value.m_bFlag_Obstacle_Right_b)
+            if(_pFlag_Value.m_bFlag_MergeScan_Rear)
             {
                 cmd->angular.z = 0.0;
                 cmd->linear.x = 0.0;
@@ -4199,7 +4296,7 @@ bool Un_LiftStation_Yaw_tracking()
             else
             {
                 cmd->angular.z = 0.0;
-                cmd->linear.x = -1.0 * m_fdistance * 0.05; 
+                cmd->linear.x = -1.0 * m_fdistance * 0.02; 
                 cmdpub_.publish(cmd);
                 m_iback_cnt++;
             }
@@ -4216,11 +4313,11 @@ bool Un_LiftStation_Yaw_tracking()
     else
     {
         printf("++dir \n");
-        cmd->angular.z = -1.0 * _pAR_tag_pose.m_target_yaw * 0.5; 
+        cmd->angular.z = -1.0 * _pAR_tag_pose.m_target_yaw * 1.2; 
         cmdpub_.publish(cmd);
         sleep(2);
 
-        if(m_fdistance > 2.0 || m_fdistance < -2.0) 
+        if(m_fdistance > 3.0 || m_fdistance < -3.0) 
         {
             printf("[Error] Marker too far away !! \n");
             cmd->angular.z = 0.0;
@@ -4232,9 +4329,9 @@ bool Un_LiftStation_Yaw_tracking()
             return bResult;
         }
 
-        while(m_iback_cnt < 30)
+        while(m_iback_cnt < 150)
         {
-            if(_pFlag_Value.m_bFlag_Obstacle_Left_b && _pFlag_Value.m_bFlag_Obstacle_Right_b)
+            if(_pFlag_Value.m_bFlag_MergeScan_Rear)
             {
                 cmd->angular.z = 0.0;
                 cmd->linear.x = 0.0;
@@ -4243,7 +4340,7 @@ bool Un_LiftStation_Yaw_tracking()
             else
             {
                 cmd->angular.z = 0.0;
-                cmd->linear.x = -1.0 * m_fdistance * 0.04; 
+                cmd->linear.x = -1.0 * m_fdistance * 0.02; 
                 cmdpub_.publish(cmd);
                 m_iback_cnt++;
             }
@@ -4269,15 +4366,25 @@ bool Un_LiftStation_tracking2(int marker_id)
     geometry_msgs::TwistPtr cmd(new geometry_msgs::Twist());
     printf("go to LIFT when H model hit front bumper \n");
 
+    if(_pRobot_Status.m_iCallback_Bumper != 0){
+            cmd->linear.x =  0.0; 
+            cmd->angular.z = 0.0;
+            cmdpub_.publish(cmd);
+            printf("Lift (Conveyor) Tracking STOP & Docking Finish !! \n");
+            ex_iDocking_CommandMode = 26;
+            m_iNoMarker_cnt = 0;
+            return false;
+        }
+
     float m_fdistance = 0.0;
     if(_pAR_tag_pose.m_iAR_tag_id == marker_id)
     {
         printf("go to LIFT when H model hit front bumper 2 \n");
 
         m_fdistance = sqrt(_pAR_tag_pose.m_transform_pose_x * _pAR_tag_pose.m_transform_pose_x + _pAR_tag_pose.m_transform_pose_y * _pAR_tag_pose.m_transform_pose_y);
-        if(_pRobot_Status.m_iCallback_Bumper != 1)
+        if(_pRobot_Status.m_iCallback_Bumper == 0)
         {
-            cmd->linear.x = 1.0 * (m_fdistance /2.0) * 0.05; 
+            cmd->linear.x = 1.0 * m_fdistance * 0.02; 
             printf("Lift linear velocity: %.2f \n", cmd->linear.x);
             if(cmd->linear.x > 1.0)
             {
@@ -4300,13 +4407,7 @@ bool Un_LiftStation_tracking2(int marker_id)
             }
             
             cmdpub_.publish(cmd);
-        }
-        if (_pRobot_Status.m_iCallback_Bumper != 1)
-        {
-            // If bumper is not hit, continue tracking
-            return true;
-        }
-        else
+        } else
         {
             cmd->linear.x =  0.0; 
             cmd->angular.z = 0.0;
@@ -4316,6 +4417,9 @@ bool Un_LiftStation_tracking2(int marker_id)
             m_iNoMarker_cnt = 0;
             return false;
         }
+    }else{
+        cmd->linear.x = 0.01;
+        cmdpub_.publish(cmd);
     }
     bResult = true;
     return bResult;
@@ -4382,7 +4486,9 @@ bool set_marker10_Command(tetraDS_service::set_marker10::Request &req,
 {
 	bool bResult = false;
     
-    bResult = set_armarker10();
+    Dynamic_reconfigure_AR_marker_size_Set_DoubleParam("marker_size", 10.0);
+    //bResult = set_armarker10();
+    bResult= true;
     printf("set_armarker10: %d \n", bResult);
 
     /*
@@ -4399,7 +4505,9 @@ bool set_marker20_Command(tetraDS_service::set_marker20::Request &req,
 {
 	bool bResult = false;
     
-    bResult = set_armarker20();
+    Dynamic_reconfigure_AR_marker_size_Set_DoubleParam("marker_size", 20.0);
+    //bResult = set_armarker20();
+    bResult= true;
     printf("set_armarker20: %d \n", bResult);
 
     /*
@@ -4435,7 +4543,7 @@ bool Goto_Conveyor_Command(tetraDS_service::gotoconveyor::Request &req,
     _pRobot_Status.CONVEYOR_MOVEMENT = req.movement;
     _pFlag_Value.m_bflag_Conveyor_docking = true;
 
-    ROS_INFO("goto_conveyor_name: %s, id: %d, movement: %d", goto_goal_id.id.c_str(), _pRobot_Status.CONVEYOR_ID, _pRobot_Status.CONVEYOR_MOVEMENT);
+    ROS_INFO("goto_conveyor_name %s, id %d, movement %d", goto_goal_id.id.c_str(), _pRobot_Status.CONVEYOR_ID, _pRobot_Status.CONVEYOR_MOVEMENT);
 
     if(_pRobot_Status.m_iCallback_Charging_status <= 1 && (_pAR_tag_pose.m_iAR_tag_id == -1 || _pAR_tag_pose.m_transform_pose_x <= 0.5))  //Nomal
     {
@@ -4480,10 +4588,10 @@ bool Goto_Lift_Command(tetraDS_service::gotolift::Request &req,
 
     goto_goal_id.id = req.Location;
     _pRobot_Status.LIFT_ID = req.id;
-    _pRobot_Status.LIFT_MOVEMENT = req.movement;
+    //_pRobot_Status.LIFT_MOVEMENT = req.movement;
     _pFlag_Value.m_bflag_Lift_docking = true;
 
-    ROS_INFO("goto_lift_name: %s, id: %d, movement: %d", goto_goal_id.id.c_str(), _pRobot_Status.LIFT_ID, _pRobot_Status.LIFT_MOVEMENT);
+    ROS_INFO("goto_lift_name %s, id %d, movement %d", goto_goal_id.id.c_str(), _pRobot_Status.LIFT_ID, _pRobot_Status.LIFT_MOVEMENT);
 
     if(_pRobot_Status.m_iCallback_Charging_status <= 1 && (_pAR_tag_pose.m_iAR_tag_id == -1 || _pAR_tag_pose.m_transform_pose_x <= 0.5))  //Nomal
     {
@@ -4728,19 +4836,19 @@ void *DockingThread_function(void *data)
                 break;
             /****************************************************************/
             case 1:
-                set_armarker10();
+                //set_armarker10();
+                Dynamic_reconfigure_AR_marker_size_Set_DoubleParam("marker_size", 10.0);
                 printf("!! DockingThread_function_1 !! \n");
                 LED_Toggle_Control(1, 3,100,3,100);
                 LED_Turn_On(63);
                 //usb_cam_On_client.call(m_request);
-                sleep(2);
-                ex_iDocking_CommandMode = 2;
+                sleep(3);
+                ex_iDocking_CommandMode = 7;
                 docking_progress.data = 1;
                 docking_progress_pub.publish(docking_progress);
                 break;
             case 2:
                 ChargingStation_tracking(true, _pAR_tag_pose.m_iSelect_AR_tag_id);
-                printf(" ---------------------------------------- \n");
                 if(_pFlag_Value.m_bfalg_DockingExit)
                 {
                     Docking_EXIT();
@@ -4795,6 +4903,20 @@ void *DockingThread_function(void *data)
 
                 ex_iDocking_CommandMode = 0;
                 break;
+            case 7:
+                if(_pAR_tag_pose.m_fAR_tag_pitch <= 0.0104533 && _pAR_tag_pose.m_fAR_tag_pitch >= -0.0104533) //+- 1.0deg
+                {
+                    ex_iDocking_CommandMode = 2;
+                }else{
+                    setARGoal(1.3);
+                    ex_iDocking_CommandMode = 0;
+                }
+                if(_pFlag_Value.m_bfalg_DockingExit)
+                {
+                    Docking_EXIT();
+                    ex_iDocking_CommandMode = 0;
+                }
+                break;
             case 9:
                 printf("Docking FAIL ! \n");
                 LED_Toggle_Control(1, 10,100,10,1);
@@ -4813,13 +4935,14 @@ void *DockingThread_function(void *data)
                     Docking_EXIT();
                     ex_iDocking_CommandMode = 0;
                 }
-                set_armarker20();
+                //set_armarker20();
+                Dynamic_reconfigure_AR_marker_size_Set_DoubleParam("marker_size", 20.0);
                 printf("!! Lift_Thread_function_1 !! \n");
-                LiftMovement1(lift_cmd_client);
-                Lift_Check();
-                sleep(5); //wait 5sec
+                sleep(2); //wait 2sec
+                ex_iDocking_CommandMode = 18;
                 docking_progress.data = 11;
                 docking_progress_pub.publish(docking_progress);
+
                 break;
             case 12:
                 LiftStation_tracking(true, _pAR_tag_pose.m_iSelect_AR_tag_id);
@@ -4859,7 +4982,9 @@ void *DockingThread_function(void *data)
                 break;
             case 15:
                 //charging_port_On_client.call(m_request2);
-                Approach_Station2Move2();
+                //pproach_Station2Move2();
+                LiftMovement1(lift_cmd_client);
+                Lift_Check();
                 if(_pFlag_Value.m_bfalg_DockingExit)
                 {
                     Docking_EXIT();
@@ -4874,11 +4999,25 @@ void *DockingThread_function(void *data)
                 docking_progress_pub.publish(docking_progress);
                 break;
             case 17: //Get out of lift hole and Lifting finished !
-                Depart_1500mm_Liftmove();
+                Depart_1500mm_Liftmove(0);
                 ROS_INFO_STREAM("TETRA Lifting FINISH And Get out of LIFT HOLE !!");
                 // ex_iLiftMode = 0;
                 break;
                 //finish lift and go back home
+            case 18:
+                if(_pAR_tag_pose.m_fAR_tag_pitch <= 0.0104533 && _pAR_tag_pose.m_fAR_tag_pitch >= -0.0104533) //+- 1.0deg
+                {
+                    ex_iDocking_CommandMode = 12;
+                }else{
+                    setARGoal(2.3);
+                    ex_iDocking_CommandMode = 0;
+                }
+                if(_pFlag_Value.m_bfalg_DockingExit)
+                {
+                    Docking_EXIT();
+                    ex_iDocking_CommandMode = 0;
+                }
+                break;
             case 19:
                 printf("Lift Docking FAIL ! \n");
                 LED_Toggle_Control(1, 10,100,10,1);
@@ -4892,11 +5031,11 @@ void *DockingThread_function(void *data)
                     Docking_EXIT();
                     ex_iDocking_CommandMode = 0;
                 }
-                set_armarker20();
+                //set_armarker20();
+                Dynamic_reconfigure_AR_marker_size_Set_DoubleParam("marker_size", 20.0);
                 printf("!! Lift_Thread_function_2 !! \n");
-                LiftMovement2(lift_cmd_client);
-                Un_Lift_Check();
-                sleep(5); //wait 5sec
+                sleep(2); //wait 2sec
+                ex_iDocking_CommandMode = 28;
                 docking_progress.data = 21;
                 docking_progress_pub.publish(docking_progress);
                 break;
@@ -4938,7 +5077,9 @@ void *DockingThread_function(void *data)
                 break;
             case 25:
                 //charging_port_On_client.call(m_request2);
-                Un_Approach_Station2Move2();
+                //Un_Approach_Station2Move2();
+                LiftMovement2(lift_cmd_client);
+                Un_Lift_Check();
                 if(_pFlag_Value.m_bfalg_DockingExit)
                 {
                     Docking_EXIT();
@@ -4953,11 +5094,25 @@ void *DockingThread_function(void *data)
                 docking_progress_pub.publish(docking_progress);
                 break;
             case 27: //Get out of lift hole and Lifting finished !
-                Depart_1500mm_Liftmove();
+                Depart_1500mm_Liftmove(1);
                 ROS_INFO_STREAM("TETRA Lifting FINISH And Get out of LIFT HOLE !!");
                 // ex_iLiftMode = 0;
                 break;
                 //finish lift and go back home
+            case 28:
+                if(_pAR_tag_pose.m_fAR_tag_pitch <= 0.0104533 && _pAR_tag_pose.m_fAR_tag_pitch >= -0.0104533) //+- 1.0deg
+                {
+                    ex_iDocking_CommandMode = 22;
+                }else{
+                    setARGoal(2.3);
+                    ex_iDocking_CommandMode = 0;
+                }
+                if(_pFlag_Value.m_bfalg_DockingExit)
+                {
+                    Docking_EXIT();
+                    ex_iDocking_CommandMode = 0;
+                }
+                break;
             case 29:
                 printf("Lift Docking FAIL ! \n");
                 LED_Toggle_Control(1, 10,100,10,1);
@@ -5000,14 +5155,13 @@ void *DockingThread_function(void *data)
                 break;
             case 151: //Lift UP call...
                 LiftMovement2(lift_cmd_client);
-                sleep(10);
+                sleep(2);
                 printf("ROBOT BACKMOVE OF LIFT \n");
                 ex_iDocking_CommandMode = 17;
                 break;
 
             case 171: //Lift Down and origin call...
                 LiftMovement1(lift_cmd_client);
-                sleep(10);
                 printf("ROBOT BACKMOVE OF LIFT \n");
                 ex_iDocking_CommandMode = 27;
                 break;           
@@ -5069,7 +5223,7 @@ void *AutoThread_function(void *data)
 
                 }
 
-                ROS_INFO("[patrol]: goto_ %s", arr_patrol_location[i].c_str());
+                ROS_INFO("[patrol] goto_ %s", arr_patrol_location[i].c_str());
                 while(_pRobot_Status.m_iMovebase_Result != 3)
                 {
                     if(!_pFlag_Value.m_bflag_patrol && !_pFlag_Value.m_bflag_goto_cancel)
@@ -5103,7 +5257,7 @@ void *AutoThread_function(void *data)
                 }
                 LED_Toggle_Control(1,3,100,3,1);
                 LED_Turn_On(100);
-                ROS_INFO("Battery Low - 15% : come back Home [While autothread] ");
+                ROS_INFO("Battery Low - 15 percent  come back Home [While autothread] ");
 
                 _pFlag_Value.m_bflag_patrol = false;
                 
@@ -5178,7 +5332,7 @@ void RVIZ_GUI_Goto_Callback(const std_msgs::String::ConstPtr& msg)
 
     if(m_bGoto)
     {
-        ROS_INFO("goto_id.id: %s", goto_goal_id.id.c_str());
+        ROS_INFO("goto_id.id %s", goto_goal_id.id.c_str());
         //costmap clear call//
         clear_costmap_client.call(m_request);
 
@@ -5882,7 +6036,7 @@ void resultCallback(const move_base_msgs::MoveBaseActionResult::ConstPtr& msgRes
 
   if(msgResult->status.status == SUCCEEDED)
   { 
-    ROS_INFO("[SUCCEEDED]resultCallback: %d ",msgResult->status.status);
+    ROS_INFO("[SUCCEEDED]resultCallback %d ",msgResult->status.status);
     _pFlag_Value.m_bflag_NextStep = true;
     _pRobot_Status.m_iMovebase_Result = 3;
     m_iRetry_cnt = 0;
@@ -5921,6 +6075,14 @@ void resultCallback(const move_base_msgs::MoveBaseActionResult::ConstPtr& msgRes
     // reset pose
     //Reset_Call_service();
 
+    if(docking_progress.data == 1){
+        ex_iDocking_CommandMode = 2;
+    }else if(docking_progress.data == 11){
+        ex_iDocking_CommandMode = 12;
+    }else if(docking_progress.data == 21){
+        ex_iDocking_CommandMode = 22;
+    }
+
   }
   else if( msgResult->status.status == ABORTED)
   {
@@ -5928,7 +6090,7 @@ void resultCallback(const move_base_msgs::MoveBaseActionResult::ConstPtr& msgRes
     LED_Turn_On(18);
     printf("[ERROR]resultCallback _ RED LED On \n");
     _pFlag_Value.m_bflag_NextStep = false;
-    ROS_INFO("[ERROR]resultCallback: %d ",msgResult->status.status);
+    ROS_INFO("[ERROR]resultCallback %d ",msgResult->status.status);
 
     m_flag_setgoal = true;
 
@@ -5939,8 +6101,9 @@ void resultCallback(const move_base_msgs::MoveBaseActionResult::ConstPtr& msgRes
 
     if(m_iRetry_cnt >= MAX_RETRY_CNT)
     {
+        ROS_INFO("[RETRY Behavior] FAIL (%d)! \n", m_iRetry_cnt);
         m_iRetry_cnt = 0;
-        ROS_INFO("[RETRY Behavior]: FAIL (%d)! \n", m_iRetry_cnt);
+        docking_progress.data = 0;
     }
     else
     {
@@ -5953,8 +6116,15 @@ void resultCallback(const move_base_msgs::MoveBaseActionResult::ConstPtr& msgRes
         else
             LED_Turn_On(63);
 
-        ROS_INFO("[RETRY Behavior]: goto_ %s", goal.goal_id.id.c_str());
-        setGoal(goal);
+        ROS_INFO("[RETRY Behavior] goto_ %s", goal.goal_id.id.c_str());
+
+        if(docking_progress.data == 1){
+            setARGoal(1.3);
+        }else if(docking_progress.data == 11 || docking_progress.data == 21 ){
+            setARGoal(2.3);
+        }else{
+            setGoal(goal);
+        }
         m_iRetry_cnt++;
     }
 
@@ -5973,7 +6143,7 @@ void resultCallback(const move_base_msgs::MoveBaseActionResult::ConstPtr& msgRes
   else
   {
     _pFlag_Value.m_bflag_NextStep = false;
-    ROS_INFO("resultCallback: %d ",msgResult->status.status);
+    ROS_INFO("resultCallback %d ",msgResult->status.status);
     _pRobot_Status.m_iMovebase_Result = msgResult->status.status;
     //costmap clear call//
     //clear_costmap_client.call(m_request);
@@ -6005,8 +6175,12 @@ int main (int argc, char** argv)
     PoseReset_pub = nh.advertise<std_msgs::Int32>("PoseRest",10);
     //Acceleration input//
     Accel_pub = nh.advertise<std_msgs::Int32>("accel_vel",10);
+
+
+    goal_pub_ = nh.advertise<geometry_msgs::PoseStamped>("goal_pub",10);
+
     //AR_TAG_subscriber//
-    ros::Subscriber AR_sub = nh.subscribe("ar_pose_marker", 100, AR_tagCallback);
+    ros::Subscriber AR_sub = nh.subscribe("corrected_ar_markers", 100, AR_tagCallback);
     //Laser Scan subscriber//
     ros::Subscriber scan_sub = nh.subscribe("scan", 100, LaserScanCallback);
     ros::Subscriber scan_b_sub = nh.subscribe("scan_b", 100, LaserScanCallback_b); 
@@ -6160,6 +6334,7 @@ int main (int argc, char** argv)
 
     //Lift_Info Subscriber//
     ros::Subscriber sensor_status = nInfo.subscribe<std_msgs::Int32>("lift_sensor", 1, SensorCallback2); //pathing on tetraDS_interface
+    ros::Subscriber lift_status = nInfo.subscribe<std_msgs::Int32>("lift_movement", 1, LiftCallback);
 
     //bumper_data to Pointcloud2_data/
     ros::NodeHandle nbumper;
@@ -6272,7 +6447,7 @@ int main (int argc, char** argv)
     printf("HOME_dQUATERNION_Z: %f \n", _pHomePose.HOME_dQUATERNION_Z);
     printf("HOME_dQUATERNION_W: %f \n", _pHomePose.HOME_dQUATERNION_W);
 
-    set_armarker10();
+    //set_armarker10();
     
     std::string node_name = "/" + tf_prefix_ + "/move_base"; // add move_base Die Check node_name
     std::string node_name2 = "/" + tf_prefix_ + "/cartographer_node"; // add cartographer_node Die Check node_name
@@ -6294,6 +6469,7 @@ int main (int argc, char** argv)
                 // ROS_ERROR("move_base die");
             }
         }
+
 
         //IMU Reset Loop//
         if(m_iTimer_cnt >= 500) //10 sec_polling
@@ -6358,6 +6534,7 @@ int main (int argc, char** argv)
                     ROS_ERROR("[TF_Transform_Error(map to base_footprint)]: %s", ex.what());
                     continue;
                 }
+
 
                 //map to odom TF Pose////////////////////////////////////////////////////////////////////////////////////////////////////////////////
                 tf::StampedTransform transform2;

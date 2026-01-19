@@ -98,10 +98,10 @@
   </link>
 
   <joint name="usb_cam" type="fixed">
-    <origin xyz="0.3325 0.0 0.156" rpy="${PI*0.5} ${PI} ${PI*0.5}"/>
+    <origin xyz="0.3325 -0.06 0.156" rpy="${PI*0.5} ${PI} ${PI*0.5}"/>
     <parent link="base_link"/>
     <child link="usb_cam" />
-  </joint>  
+  </joint> 
 
 
  <link name="Front_bumper">
@@ -148,7 +148,7 @@
   </link>
 
   <joint name="camera1_link" type="fixed">
-    <origin xyz="0.39660 0.05 0.095" rpy="0 0 0" />
+    <origin xyz="0.39660 0.0 0.095" rpy="0 0 0" />
     <parent link="base_link"/>
     <child link="camera1_link" />
   </joint>

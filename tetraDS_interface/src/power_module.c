@@ -27,6 +27,10 @@ void power_deinit(int fd)
 	close(fd);
 }
 
+unsigned short make_word(unsigned char high, unsigned char low) {
+    return ((unsigned short)high << 8) | low;
+}
+
 int power_set_light(int fd, int id, int brightness)
 {
 	int ret;
@@ -1174,6 +1178,30 @@ int power_read_conveyor_movement(int fd, int* result)
 
 	int iInput = packet_buf[4] & 0x07;
 	*result = iInput;
+
+	return ret;
+}
+
+int power_read_lift(int fd, int *lift)
+{
+	unsigned char packet_buf[255] = {STX, 'M','L', ETX};
+	int ret;
+
+	if(!fd) return -1;
+
+	packet_buf[4] = make_lrc(&packet_buf[1], 3);
+
+	ret = write(fd, packet_buf, 5);
+	if(ret <= 0) return -2;
+
+	memset(packet_buf, 0, sizeof(unsigned char)*255);
+	ret = get_response2(fd, packet_buf);
+	if(packet_buf[1] == 0x02) 
+	{
+		return -1;
+	}
+	
+	*lift = make_word(packet_buf[3], packet_buf[4]);
 
 	return ret;
 }
